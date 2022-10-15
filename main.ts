@@ -37,9 +37,9 @@ export default class ColorfulTag extends Plugin {
 		}
 		let css = "";
 		let d1 = head.createEl("style", { "type": "text/css", "attr": { "colorful-tag-plugin": "" } });
-		css += `body:not(.annotation-tags-off) .cm-s-obsidian .cm-line .cm-hashtag-begin:is(${sele}) { font-family: var(--font-text); white-space: nowrap; padding-right: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }`;
+		css += `body:not(.annotation-tags-off) .cm-s-obsidian .cm-line .cm-hashtag-begin:is(${sele}) { border: none; font-family: var(--font-text); white-space: nowrap; padding-right: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }`;
 		css += `body:not(.annotation-tags-off) .cm-s-obsidian .cm-line span:is(${sele}) { font-weight: 900; font-style: normal; white-space: nowrap; color: #000000; padding-left: 6px; padding-right: 6px; border-radius: ${global[`radius`]}px; }`;
-		css += `body:not(.annotation-tags-off) .cm-s-obsidian .cm-line .cm-hashtag-end:is(${sele}) { font-family: var(--font-text); white-space: nowrap; padding-left: 0; border-bottom-left-radius: 0; border-top-left-radius: 0; }`;
+		css += `body:not(.annotation-tags-off) .cm-s-obsidian .cm-line .cm-hashtag-end:is(${sele}) { border: none; font-family: var(--font-text); white-space: nowrap; padding-left: 0; border-bottom-left-radius: 0; border-top-left-radius: 0; }`;
 
 		for (let i in styles) {
 			let m = new Map(Object.entries(styles[i]));

@@ -1,6 +1,6 @@
 # Obsidian Colorful Tag
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+This is a sample plugin for [Obsidian](https://obsidian.md).
 
 ![](./assets/setting.png)
 

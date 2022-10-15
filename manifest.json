@@ -1,10 +1,10 @@
 {
 	"id": "obsidian-colorful-tag",
 	"name": "Colorful Tag",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "0.15.0",
 	"description": "Style your tags!",
 	"author": "RieN7",
-	"authorUrl": "https://obsidian.md",
+	"authorUrl": "https://github.com/rien7",
 	"isDesktopOnly": false
 }
