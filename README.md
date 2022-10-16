@@ -2,6 +2,8 @@
 
 This is a sample plugin for [Obsidian](https://obsidian.md).
 
+You can easily add prefix or suffix to a tag and change the tag’s background or text color.
+
 ![](./assets/setting.png)
 
 ## How To Install
@@ -10,7 +12,7 @@ You can install this plugin via [BRAT](https://github.com/TfTHacker/obsidian42-b
 
 Here is the repository for this plugin: `rien7/obsidian-colorful-tag`
 
-## Inspair By
+## Inspired By
 
 - [Shimmering Focus ⟡](https://github.com/chrisgrieser/shimmering-focus): A minimalistic and opinionated Obsidian theme for the keyboard-centric user.
 - [Supercharged Links](https://github.com/mdelobelle/obsidian_supercharged_links): Adds attributes to internal links with the values of target note's frontmatter attributes.
