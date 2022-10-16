@@ -36,7 +36,8 @@ export default class ColorfulTag extends Plugin {
 			sele += `.cm-tag-${m.get("tag")}, `;
 		}
 		let css = "";
-		let d1 = head.createEl("style", { "type": "text/css", "attr": { "colorful-tag-plugin": "" } });
+		let el = head.createEl("style", { "type": "text/css", "attr": { "colorful-tag-plugin": "" } });
+		// editing view
 		css += `body:not(.annotation-tags-off) .cm-s-obsidian .cm-line .cm-hashtag-begin:is(${sele}) { border: none; font-family: var(--font-text); white-space: nowrap; padding-right: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }`;
 		css += `body:not(.annotation-tags-off) .cm-s-obsidian .cm-line span:is(${sele}) { font-weight: 900; font-style: normal; white-space: nowrap; color: #000000; padding-left: 6px; padding-right: 6px; border-radius: ${global[`radius`]}px; }`;
 		css += `body:not(.annotation-tags-off) .cm-s-obsidian .cm-line .cm-hashtag-end:is(${sele}) { border: none; font-family: var(--font-text); white-space: nowrap; padding-left: 0; border-bottom-left-radius: 0; border-top-left-radius: 0; }`;
@@ -49,7 +50,7 @@ export default class ColorfulTag extends Plugin {
 			let text_color = m.get("text-color");
 			let prefix = m.get("prefix");
 			let suffix = m.get("suffix");
-			css += `body:not(.annotation-tags-off) :is(.cm-tag-${tag},.tag[href="#${tag}"]) { background-color: ${color} !important; }`;
+			css += `body:not(.annotation-tags-off) :is(.cm-tag-${tag},.tag[href="#${tag}"]) { background-color: ${color} !important; font-weight: 900; font-style: normal; white-space: nowrap; color: #000000; padding-left: 6px; padding-right: 6px; border-radius: ${global[`radius`]}px; }`;
 			css += `body:not(.annotation-tags-off) .cm-s-obsidian .cm-line span:is(.cm-tag-${tag}) { color: ${text_color} !important; }`;
 			if (prefix != "") {
 				css += `body:not(.annotation-tags-off) .cm-s-obsidian .cm-line .cm-hashtag-end:is(cm-tag-${tag}) { padding-left: 6px; }`;
@@ -59,6 +60,7 @@ export default class ColorfulTag extends Plugin {
 				css += `body:not(.annotation-tags-off) :is(.cm-hashtag-end.cm-tag-${tag},.tag[href="#${tag}"])::after { content: " ${suffix}"; }`;
 			}
 		}
+		// plugin setting
 		css += `.colorful-tag-rule.is-collapsed > .cm-s-obsidian > .setting-item { display: none; }`;
 		css += `.colorful-tag-rule { margin-top: 15px; }`;
 		css += `.colorful-tag-collapse-indicator.is-collapsed > svg { transform: rotate(-90deg); }`;
@@ -68,7 +70,7 @@ export default class ColorfulTag extends Plugin {
 		css += `.colorful-tag-setting-title.cm-hashtag-end { font-family: var(--font-text); padding-left: 0; border-bottom-left-radius: 0; border-top-left-radius: 0; }`
 		css += `.colorful-tag-setting-title.setting-title { line-height: 1.8em; font-size: 1.8em; width: 300px; height: 50px; margin: 0 auto; background-color: #ffdc5180; }`
 		css += `.colorful-tag-setting-title.setting-title::before { content: "🎨 "; }`
-		d1.innerHTML = css;
+		el.innerHTML = css;
 		del.forEach((e) => { e.remove() });
 	}
 
