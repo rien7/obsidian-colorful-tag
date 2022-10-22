@@ -32,27 +32,12 @@ export default class ColorfulTag extends Plugin {
 		let head = document.querySelector("head")!;
 		let del = head.querySelectorAll("[colorful-tag-plugin]");
 		let styles = this.settings.styleList;
-		let global = this.settings.global;
-		let global_enable = this.settings.global_enable;
-		console.log(global)
-		let sele = "";
-		for (let i in styles) {
-			let m = new Map(Object.entries(styles[i]));
-			let tag = m.get("tag");
-			// replace \ to \\, because \ is a special character in css
-			tag = tag.replace(/\\/g, "\\\\");
-			// replace / to \/, because / is a special character in css
-			tag = tag.replace(/\//g, "\\/");
-			if (!m.get("enable")) { continue; }
-			sele += `.cm-tag-${tag}, `;
-		}
+		let global = new Map(Object.entries(this.settings.global));
+		let global_enable = new Map(Object.entries(this.settings.global_enable));
+
 		let css = "";
 		let el = head.createEl("style", { "type": "text/css", "attr": { "colorful-tag-plugin": "" } });
-		// editing view
-		css += `body:not(.annotation-tags-off) .cm-s-obsidian .cm-line .cm-hashtag-begin:is(${sele}) { border: none; font-family: var(--font-text); white-space: nowrap; padding-right: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }`;
-		// css += `body:not(.annotation-tags-off) .cm-s-obsidian .cm-line span:is(${sele}) { font-weight: 900; font-style: normal; white-space: nowrap; color: #000000; padding-left: 6px; padding-right: 6px; border-radius: ${global[`radius`]}; }`;
-		css += `body:not(.annotation-tags-off) .cm-s-obsidian .cm-line .cm-hashtag-end:is(${sele}) { border: none; font-family: var(--font-text); white-space: nowrap; padding-left: 0; border-bottom-left-radius: 0; border-top-left-radius: 0; }`;
-
+	
 		for (let i in styles) {
 			let m = new Map(Object.entries(styles[i]));
 			if (!m.get("enable")) { continue; }
@@ -61,38 +46,37 @@ export default class ColorfulTag extends Plugin {
 			tag = tag.replace(/\\/g, "\\\\");
 			// replace / to \/, because / is a special character in css
 			tag = tag.replace(/\//g, "\\/");
-			let background_color = m.get("background-color");
-			if (global_enable["background-color"]) {
-				background_color = global["background-color"];
-			}
-			let text_color = m.get("text-color");
-			if (global_enable["text-color"]) {
-				text_color = global["text-color"];
-			}
-			let prefix = m.get("prefix");
-			if (global_enable["prefix"]) {
-				prefix = global["prefix"];
-			}
-			let suffix = m.get("suffix");
-			if (global_enable["suffix"]) {
-				suffix = global["suffix"];
-			}
-			let radius = m.get("radius");
-			if (global_enable["radius"]) {
-				radius = global["radius"];
-			}
-			let text_size = m.get("text-size");
-			if (global_enable["text-size"]) {
-				text_size = global["text-size"];
-			}
-			css += `body:not(.annotation-tags-off) :is(.cm-tag-${tag},.tag[href="#${tag}"]) { font-size: ${text_size}; background-color: ${background_color} !important; font-weight: 900; font-style: normal; white-space: nowrap; color: #000000; padding-left: 6px; padding-right: 6px; border-radius: ${radius}; }`;
-			css += `body:not(.annotation-tags-off) .cm-s-obsidian .cm-line span:is(.cm-tag-${tag}) { color: ${text_color}; }`;
+			let background_color = global.get("background-color") || m.get("background-color");
+			let text_color = global.get("text-color") || m.get("text-color");
+			let prefix = global.get("prefix") || m.get("prefix");
+			let suffix = global.get("suffix") || m.get("suffix");
+			let radius = global.get("radius") || m.get("radius");
+			let text_size = global.get("text-size") || m.get("text-size");
+
+			// reading view: body a.tag[href="#${tag}"] => background-color, text-color, text-size, [radius, prefix, suffix, padding], white-space, border
+			// edit view: body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag} => background-color, text-color, text-size, white-space, border
+			//                                 .cm-hashtag-begin => prefix, radius, padding
+			//						           .cm-hashtag-end => suffix, radius, padding
+			// reading view && edit view
+			css += `body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag} { background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; white-space: nowrap; border: none; }`;
+			// only reading view
+			css += `body a.tag[href="#${tag}"] { border-radius: ${radius}; padding-left: 6px; padding-right: 6px; }`;
+			// edit view begin
+			css += `body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag}.cm-hashtag-begin { border-top-right-radius: 0; border-bottom-right-radius: 0; padding-right: 0px; border-top-left-radius: ${radius}; border-bottom-left-radius: ${radius}; padding-left: 6px; }`;
+			// edit view end
+			css += `body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag}.cm-hashtag-end { border-bottom-left-radius: 0; border-top-left-radius: 0; padding-left: 0px; border-top-right-radius: ${radius}; border-bottom-right-radius: ${radius}; padding-right: 6px; }`;
 			if (prefix != "") {
-				css += `body:not(.annotation-tags-off) .cm-s-obsidian .cm-line .cm-hashtag-end:is(cm-tag-${tag}) { padding-left: 6px; }`;
-				css += `body:not(.annotation-tags-off) :is(.cm-hashtag-begin.cm-tag-${tag},.tag[href="#${tag}"])::before { content: "${prefix} "; }`;
+				css += `:is(body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag}.cm-hashtag-begin)::before { content: "${prefix} "; }`;
 			}
 			if (suffix != "") {
-				css += `body:not(.annotation-tags-off) :is(.cm-hashtag-end.cm-tag-${tag},.tag[href="#${tag}"])::after { content: " ${suffix}"; }`;
+				css += `:is(body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag}.cm-hashtag-end)::after { content: " ${suffix}"; }`;
+			}
+		}
+		// invisible setting items while the global setting is enable
+		for (let attr of this.settings.attrList) {
+			let attr_alt = attr.replace(/ /g, "-");
+			if (global_enable.get(attr_alt)) {
+				css += `.setting-${attr_alt} { display: none; }`;
 			}
 		}
 		// plugin setting
@@ -105,19 +89,14 @@ export default class ColorfulTag extends Plugin {
 		css += `.colorful-tag-setting-title.cm-hashtag-end { font-family: var(--font-text); padding-left: 0; border-bottom-left-radius: 0; border-top-left-radius: 0; }`
 		css += `.colorful-tag-setting-title.setting-title { line-height: 1.8em; font-size: 1.8em; width: 300px; height: 50px; margin: 0 auto; background-color: #ffdc5180; }`
 		css += `.colorful-tag-setting-title.setting-title::before { content: "🎨 "; }`
-		// invisible setting items while the global setting is enable
-		for (let attr of this.settings.attrList) {
-			let attr_alt = attr.replace(/ /g, "-");
-			if (global_enable[attr_alt]) {
-				css += `.setting-${attr_alt} { display: none; }`;
-			}
-		}
+
 		el.innerHTML = css;
 		del.forEach((e) => { e.remove() });
 	}
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.settings.attrList = DEFAULT_SETTINGS.attrList;
 		this.refresh();
 	}
 
@@ -188,9 +167,9 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 				ctl.className = "colorful-tag-collapse-indicator is-collapsed"
 			}
 		})
-		let hashtag = title.nameEl.createEl("span", "cm-hashtag-begin cm-tag-" + styles[i]["tag"]);
+		let hashtag = title.nameEl.createEl("span", "cm-hashtag cm-hashtag-begin cm-tag-" + styles[i]["tag"]);
 		hashtag.setText("#")
-		let content = title.nameEl.createEl("span", "cm-hashtag-end cm-tag-" + styles[i]["tag"]);
+		let content = title.nameEl.createEl("span", "cm-hashtag cm-hashtag-end cm-tag-" + styles[i]["tag"]);
 		content.setText(styles[i]["tag"])
 		new Setting(inner)
 			.setName("tag")
@@ -297,6 +276,11 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 						global_enable[attr_alt] = v;
 						this.plugin.settings.global_enable = global_enable;
 						setting.components[0].setDisabled(!v);
+						if (!v) {
+							setting.components[0].setValue("");
+							delete global[attr_alt];
+							this.plugin.settings.global = global;
+						}
 						this.plugin.saveSettings();
 					}))
 		}
@@ -304,14 +288,13 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 			let m = new Map<string, any>();
 			styles.push(m);
 			let i = styles.length - 1;
-			styles[i]["tag"] = "";
-			styles[i]["prefix"] = "";
-			styles[i]["suffix"] = "";
-			styles[i]["background-color"] = "";
-			styles[i]["text-color"] = "";
-			styles[i]["text-size"] = "";
-			styles[i]["radius"] = "";
-			styles[i]["enable"] = true;
+			for (let attr of thisSetting.attrList) {
+				// replace " " to "-"
+				let attr_alt = attr.replace(/ /g, "-");
+				styles[i].set(attr_alt, "");
+			}
+			styles[i].set("tag", "");
+			styles[i].set("enable", true);
 			this.asetting(i, true);
 		});
 
