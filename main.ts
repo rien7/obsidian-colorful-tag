@@ -32,8 +32,13 @@ export default class ColorfulTag extends Plugin {
 		let sele = "";
 		for (let i in styles) {
 			let m = new Map(Object.entries(styles[i]));
+			let tag = m.get("tag");
+			// replace \ to \\, because \ is a special character in css
+			tag = tag.replace(/\\/g, "\\\\");
+			// replace / to \/, because / is a special character in css
+			tag = tag.replace(/\//g, "\\/");
 			if (!m.get("enable")) { continue; }
-			sele += `.cm-tag-${m.get("tag")}, `;
+			sele += `.cm-tag-${tag}, `;
 		}
 		let css = "";
 		let el = head.createEl("style", { "type": "text/css", "attr": { "colorful-tag-plugin": "" } });
@@ -46,6 +51,10 @@ export default class ColorfulTag extends Plugin {
 			let m = new Map(Object.entries(styles[i]));
 			if (!m.get("enable")) { continue; }
 			let tag = m.get("tag");
+			// replace \ to \\, because \ is a special character in css
+			tag = tag.replace(/\\/g, "\\\\");
+			// replace / to \/, because / is a special character in css
+			tag = tag.replace(/\//g, "\\/");
 			let color = m.get("color");
 			let text_color = m.get("text-color");
 			let prefix = m.get("prefix");
