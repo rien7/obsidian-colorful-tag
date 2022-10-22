@@ -4,13 +4,15 @@ interface ColorfulTagSetting {
 	global_enable: Map<string, boolean>;
 	global: Map<string, any>;
 	attrList: Array<string>;
+	defaultStyle: Map<string, any>;
 	styleList: Array<Map<string, any>>;
 }
 
 const DEFAULT_SETTINGS: ColorfulTagSetting = {
 	global_enable: new Map(),
-	global: new Map([['radius', 4]]),
+	global: new Map(),
 	attrList: ["radius", "prefix", "suffix", "background color", "text color", "text size"],
+	defaultStyle: new Map<string, any>([['radius', "4px"], ['prefix', ''], ['suffix', ''], ['background -color', ''], ['text-color', '#000'], ['text-size', '16px']]),
 	styleList: new Array()
 }
 
@@ -34,6 +36,7 @@ export default class ColorfulTag extends Plugin {
 		let styles = this.settings.styleList;
 		let global = new Map(Object.entries(this.settings.global));
 		let global_enable = new Map(Object.entries(this.settings.global_enable));
+		let default_style = new Map(this.settings.defaultStyle);
 
 		let css = "";
 		let el = head.createEl("style", { "type": "text/css", "attr": { "colorful-tag-plugin": "" } });
@@ -46,19 +49,19 @@ export default class ColorfulTag extends Plugin {
 			tag = tag.replace(/\\/g, "\\\\");
 			// replace / to \/, because / is a special character in css
 			tag = tag.replace(/\//g, "\\/");
-			let background_color = global.get("background-color") || m.get("background-color");
-			let text_color = global.get("text-color") || m.get("text-color");
-			let prefix = global.get("prefix") || m.get("prefix");
-			let suffix = global.get("suffix") || m.get("suffix");
-			let radius = global.get("radius") || m.get("radius");
-			let text_size = global.get("text-size") || m.get("text-size");
+			let background_color = global.get("background-color") || m.get("background-color") || default_style.get("background-color");
+			let text_color = global.get("text-color") || m.get("text-color") || default_style.get("text-color");
+			let prefix = global.get("prefix") || m.get("prefix") || default_style.get("prefix");
+			let suffix = global.get("suffix") || m.get("suffix") || default_style.get("suffix");
+			let radius = global.get("radius") || m.get("radius") || default_style.get("radius");
+			let text_size = global.get("text-size") || m.get("text-size") || default_style.get("text-size");
 
-			// reading view: body a.tag[href="#${tag}"] => background-color, text-color, text-size, [radius, prefix, suffix, padding], white-space, border
-			// edit view: body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag} => background-color, text-color, text-size, white-space, border
-			//                                 .cm-hashtag-begin => prefix, radius, padding
-			//						           .cm-hashtag-end => suffix, radius, padding
+			// reading view: body a.tag[href="#${tag}"] => font-weight, background-color, text-color, text-size, [radius, prefix, suffix, padding], white-space, border
+			// edit view: body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag} => font-weight, background-color, text-color, text-size, white-space, border
+			//                                .cm-hashtag-begin => prefix, radius, padding
+			//						          .cm-hashtag-end => suffix, radius, padding
 			// reading view && edit view
-			css += `body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag} { background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; white-space: nowrap; border: none; }`;
+			css += `body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag} { font-weight: 900; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; white-space: nowrap; border: none; }`;
 			// only reading view
 			css += `body a.tag[href="#${tag}"] { border-radius: ${radius}; padding-left: 6px; padding-right: 6px; }`;
 			// edit view begin
@@ -97,6 +100,7 @@ export default class ColorfulTag extends Plugin {
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 		this.settings.attrList = DEFAULT_SETTINGS.attrList;
+		this.settings.defaultStyle = DEFAULT_SETTINGS.defaultStyle;
 		this.refresh();
 	}
 
@@ -291,10 +295,10 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 			for (let attr of thisSetting.attrList) {
 				// replace " " to "-"
 				let attr_alt = attr.replace(/ /g, "-");
-				styles[i].set(attr_alt, "");
+				styles[i][attr_alt] = "";
 			}
-			styles[i].set("tag", "");
-			styles[i].set("enable", true);
+			styles[i]["tag"] = "";
+			styles[i]["enable"] = true;
 			this.asetting(i, true);
 		});
 
