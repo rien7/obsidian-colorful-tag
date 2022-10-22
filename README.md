@@ -6,6 +6,13 @@ You can easily add prefix or suffix to a tag and change the tag’s background o
 
 ![](./assets/setting.png)
 
+## Features
+
+- Add prefix or suffix to a tag
+- Change the text size or text color
+- Change the tag's radius size or tag’s background color
+- Global setting or per tag setting
+
 ## How To Install
 
 You can install this plugin via [BRAT](https://github.com/TfTHacker/obsidian42-brat) now.
