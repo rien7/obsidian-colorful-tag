@@ -1,4 +1,4 @@
-import { App, Modal, Plugin, PluginSettingTab, Setting, TextComponent } from 'obsidian';
+import { App, Modal, Plugin, PluginSettingTab, setIcon, Setting, TextComponent } from 'obsidian';
 
 interface ColorfulTagSetting {
 	global_enable: Object;
@@ -93,7 +93,7 @@ export default class ColorfulTag extends Plugin {
 		css += `.colorful-tag-setting-title.setting-title { line-height: 1.8em; font-size: 1.8em; width: 300px; height: 50px; margin: 0 auto; background-color: #ffdc5180; }`
 		css += `.colorful-tag-setting-title.setting-title::before { content: "🎨 "; }`
 
-		el.innerHTML = css;
+		el.setText(css);
 		del.forEach((e) => { e.remove() });
 	}
 
@@ -170,7 +170,7 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 			div.className = "colorful-tag-rule";
 			ctl.className = "colorful-tag-collapse-indicator";
 		}
-		ctl.innerHTML = '<svg viewBox="0 0 100 100" class="right-triangle" width="16" height="16"><path fill="currentColor" stroke="currentColor" d="M94.9,20.8c-1.4-2.5-4.1-4.1-7.1-4.1H12.2c-3,0-5.7,1.6-7.1,4.1c-1.3,2.4-1.2,5.2,0.2,7.6L43.1,88c1.5,2.3,4,3.7,6.9,3.7 s5.4-1.4,6.9-3.7l37.8-59.6C96.1,26,96.2,23.2,94.9,20.8L94.9,20.8z"></path></svg>';
+		setIcon(ctl, "right-triangle");
 		ctl.onClickEvent(() => {
 			if (ctl.className == "colorful-tag-collapse-indicator is-collapsed") {
 				div.className = "colorful-tag-rule";
@@ -207,7 +207,6 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 			}
 			// replace " " to "-"
 			let attr_alt = attr.replace(/ /g, "-");
-			if (global_enable.get(attr_alt)) { continue }
 
 			new Setting(inner)
 				.setName(attr)
@@ -257,7 +256,7 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 		let globalCtl = globalHeader.createEl("span", "colorful-tag-collapse-indicator is-collapsed");
 		let globalTitle = globalHeader.createEl("span", "");
 		globalTitle.setText("Global Setting");
-		globalCtl.innerHTML = '<svg viewBox="0 0 100 100" class="right-triangle" width="16" height="16"><path fill="currentColor" stroke="currentColor" d="M94.9,20.8c-1.4-2.5-4.1-4.1-7.1-4.1H12.2c-3,0-5.7,1.6-7.1,4.1c-1.3,2.4-1.2,5.2,0.2,7.6L43.1,88c1.5,2.3,4,3.7,6.9,3.7 s5.4-1.4,6.9-3.7l37.8-59.6C96.1,26,96.2,23.2,94.9,20.8L94.9,20.8z"></path></svg>';
+		setIcon(globalCtl, "right-triangle");
 		globalCtl.onClickEvent(() => {
 			if (globalCtl.className == "colorful-tag-collapse-indicator is-collapsed") {
 				globalDiv.className = "colorful-tag-rule";
