@@ -1,11 +1,11 @@
-import { App, Modal, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Modal, Plugin, PluginSettingTab, Setting, TextComponent } from 'obsidian';
 
 interface ColorfulTagSetting {
-	global_enable: Map<string, boolean>;
-	global: Map<string, any>;
+	global_enable: Object;
+	global: Object;
 	attrList: Array<string>;
 	defaultStyle: Map<string, any>;
-	styleList: Array<Map<string, any>>;
+	styleList: Array<Object>;
 }
 
 const DEFAULT_SETTINGS: ColorfulTagSetting = {
@@ -27,7 +27,7 @@ export default class ColorfulTag extends Plugin {
 	}
 
 	onunload() {
-		
+
 	}
 
 	async refresh() {
@@ -40,7 +40,7 @@ export default class ColorfulTag extends Plugin {
 
 		let css = "";
 		let el = head.createEl("style", { "type": "text/css", "attr": { "colorful-tag-plugin": "" } });
-	
+
 		for (let i in styles) {
 			let m = new Map(Object.entries(styles[i]));
 			if (!m.get("enable")) { continue; }
@@ -134,6 +134,12 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 	refreshHeader(hashtag: HTMLSpanElement, content: HTMLSpanElement, tag: string) {
+		let hashlist = hashtag.classList;
+		let contlist = content.classList;
+		if (hashlist.length > 3) {
+			hashtag.classList.remove(hashlist[2]);
+			content.classList.remove(contlist[2]);
+		}
 		hashtag.classList.add("cm-tag-" + tag);
 		content.classList.add("cm-tag-" + tag);
 		content.setText(tag);
@@ -144,16 +150,19 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 		let thisSetting = this.plugin.settings;
 		let styles = thisSetting.styleList;
 		let global = thisSetting.global;
-		let global_enable = thisSetting.global_enable;
+		let global_enable = new Map(Object.entries(thisSetting.global_enable));
+
+		let m = new Map(Object.entries(styles[i]));
+		let tag_name = m.get("tag");
 		let div = containerEl.createDiv("colorful-tag-rule is-collapsed");
 		let inner = div.createDiv("cm-s-obsidian");
 		let header = inner.createDiv("cm-line");
 		let title = new Setting(header)
 			.addToggle(tg => tg
-				.setValue(styles[i]["enable"])
+				.setValue(m.get("enable"))
 				.onChange(v => {
-					styles[i]["enable"] = v;
-					thisSetting.styleList = styles;
+					m.set("enable", v);
+					thisSetting.styleList[i] = Object.fromEntries(m);
 					this.plugin.saveSettings();
 				}))
 		let ctl = title.nameEl.createEl("span", "colorful-tag-collapse-indicator is-collapsed");
@@ -171,53 +180,53 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 				ctl.className = "colorful-tag-collapse-indicator is-collapsed"
 			}
 		})
-		let hashtag = title.nameEl.createEl("span", "cm-hashtag cm-hashtag-begin cm-tag-" + styles[i]["tag"]);
+		let hashtag = title.nameEl.createEl("span", "cm-hashtag cm-hashtag-begin cm-tag-" + tag_name);
 		hashtag.setText("#")
-		let content = title.nameEl.createEl("span", "cm-hashtag cm-hashtag-end cm-tag-" + styles[i]["tag"]);
-		content.setText(styles[i]["tag"])
+		let content = title.nameEl.createEl("span", "cm-hashtag cm-hashtag-end cm-tag-" + tag_name);
+		content.setText(tag_name)
 		new Setting(inner)
 			.setName("tag")
 			.addText(text => text
-				.setValue(styles[i]["tag"])
+				.setValue(tag_name)
 				.onChange(async (value) => {
-					styles[i]["tag"] = value;
-					this.refreshHeader(hashtag, content, styles[i]["tag"]);
-					thisSetting.styleList = styles;
+					m.set("tag", value);
+					thisSetting.styleList[i] = Object.fromEntries(m);
+					this.refreshHeader(hashtag, content, m.get("tag"));
+
 					this.plugin.saveSettings();
 				}))
 			.setDesc("Enter a tag (without #)")
 
 		for (let attr of thisSetting.attrList) {
 			// after 1.0.4, "color" in styleList change to "background color"
-			if (attr == "background color" && styles[i]["color"]) {
-				styles[i]["background-color"] = styles[i]["color"];
-				delete styles[i]["color"];
-				thisSetting.styleList = styles;
+			if (attr == "background color" && m.get("color")) {
+				m.set("background color", m.get("color"));
+				m.delete("color");
+				thisSetting.styleList[i] = Object.fromEntries(m);
 				this.plugin.saveSettings();
 			}
 			// replace " " to "-"
 			let attr_alt = attr.replace(/ /g, "-");
-			if (global_enable[attr_alt]) { continue }
-			
+			if (global_enable.get(attr_alt)) { continue }
+
 			new Setting(inner)
-			.setName(attr)
-			.addText(text => text
-				.setValue(styles[i][attr_alt])
-				.onChange(async (value) => {
-					styles[i][attr_alt] = value;
-					this.refreshHeader(hashtag, content, styles[i]["tag"]);
-					this.plugin.settings.styleList = styles;
-					this.plugin.saveSettings();
-				}))
-			.setClass(`setting-${attr_alt}`)
+				.setName(attr)
+				.addText(text => text
+					.setValue(m.get(attr_alt))
+					.onChange(async (value) => {
+						m.set(attr_alt, value);
+						thisSetting.styleList[i] = Object.fromEntries(m);
+						this.refreshHeader(hashtag, content, m.get("tag"));
+						this.plugin.saveSettings();
+					}))
+				.setClass(`setting-${attr_alt}`)
 		}
 		new Setting(inner)
 			.addButton(btn => btn
 				.setButtonText("Remove")
 				.onClick(() => {
-					styles.remove(styles[i]);
 					div.remove();
-					this.plugin.settings.styleList = styles;
+					thisSetting.styleList.splice(i, 1);
 					this.plugin.saveSettings();
 				}))
 	}
@@ -259,52 +268,52 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 			}
 		})
 		// create setting for every attr in attrList
-		let global = thisSetting.global;
-		let global_enable = thisSetting.global_enable;
+		let global = new Map(Object.entries(thisSetting.global));
+		let global_enable = new Map(Object.entries(thisSetting.global_enable));
 		for (let attr of thisSetting.attrList) {
 			// replace " " to "-"
 			let attr_alt = attr.replace(/ /g, "-");
 			let setting = new Setting(globalInner)
 				.setName(attr)
 				.addText(text => text
-					.setValue(global[attr_alt])
-					.setDisabled(!global_enable[attr_alt])
+					.setValue(global.get(attr_alt))
+					.setDisabled(!global_enable.get(attr_alt))
 					.onChange(async (value) => {
-						global[attr_alt] = value;
-						this.plugin.settings.global = global;
+						global.set(attr_alt, value);
+						this.plugin.settings.global = Object.fromEntries(global);
 						this.plugin.saveSettings();
 					}))
 				.addToggle(toggle => toggle
-					.setValue(global_enable[attr_alt] || false)
+					.setValue(global_enable.get(attr_alt) || false)
 					.onChange(v => {
-						global_enable[attr_alt] = v;
-						this.plugin.settings.global_enable = global_enable;
-						setting.components[0].setDisabled(!v);
+						global_enable.set(attr_alt, v);
+						this.plugin.settings.global_enable = Object.fromEntries(global_enable);
+						let text = setting.components[0] as TextComponent;
+						text.setDisabled(!v);
 						if (!v) {
-							setting.components[0].setValue("");
-							delete global[attr_alt];
-							this.plugin.settings.global = global;
+							text.setValue("");
+							global.delete(attr_alt);
+							this.plugin.settings.global = Object.fromEntries(global);
 						}
 						this.plugin.saveSettings();
 					}))
 		}
 		this.plugin.registerDomEvent(btn, 'click', (evt: MouseEvent) => {
 			let m = new Map<string, any>();
-			styles.push(m);
-			let i = styles.length - 1;
 			for (let attr of thisSetting.attrList) {
 				// replace " " to "-"
 				let attr_alt = attr.replace(/ /g, "-");
-				styles[i][attr_alt] = "";
+				m.set(attr_alt, "");
 			}
-			styles[i]["tag"] = "";
-			styles[i]["enable"] = true;
+			m.set("tag", "");
+			m.set("enable", true);
+			styles.push(Object.fromEntries(m));
+			let i = styles.length - 1;
 			this.asetting(i, true);
 		});
 
 		for (let k = 0; k < styles.length; k++) {
-			let i = k;
-			this.asetting(i);
+			this.asetting(k);
 		}
 	}
 }
