@@ -52,14 +52,14 @@ export default class ColorfulTag extends Plugin {
 			tag = tag.replace(/\\/g, "\\\\");
 			// replace / to \/, because / is a special character in css
 			tag = tag.replace(/\//g, "\\/");
-			let background_color = global.get("background-color") || m.get("background-color") || "";
-			let text_color = global.get("text-color") || m.get("text-color") || "";
-			let prefix = global.get("prefix") || m.get("prefix") || "";
-			let suffix = global.get("suffix") || m.get("suffix") || "";
-			let radius = global.get("radius") || m.get("radius") || "";
-			let text_size = global.get("text-size") || m.get("text-size") || "";
-			let border = global.get("border") || m.get("border") || "";
-			let font_weight = global.get("font-weight") || m.get("font-weight") || "";
+			let background_color = m.get("background-color") || global.get("background-color") || "";
+			let text_color = m.get("text-color") || global.get("text-color") || "";
+			let prefix = m.get("prefix") || global.get("prefix") || "";
+			let suffix = m.get("suffix") || global.get("suffix") || "";
+			let radius = m.get("radius") || global.get("radius") || "";
+			let text_size = m.get("text-size") || global.get("text-size") || "";
+			let border = m.get("border") || global.get("border") || "";
+			let font_weight = m.get("font-weight") || global.get("font-weight") || "";
 			let padding_size = "";
 
 			// reading view: body a.tag[href="#${tag}"] => font-weight, background-color, text-color, text-size, [radius, prefix, suffix, padding], white-space, border
@@ -82,13 +82,15 @@ export default class ColorfulTag extends Plugin {
 			}
 		}
 		// invisible setting items while the global setting is enable
-		for (let attr of this.settings.attrList) {
-			let attr_alt = attr.replace(/ /g, "-");
-			if (global_enable.get(attr_alt)) {
-				css += `.setting-${attr_alt} { display: none; }`;
-			}
-		}
+		// for (let attr of this.settings.attrList) {
+		// 	let attr_alt = attr.replace(/ /g, "-");
+		// 	if (global_enable.get(attr_alt)) {
+		// 		css += `.setting-${attr_alt} { display: none; }`;
+		// 	}
+		// }
 		// plugin setting
+		css += `.colorful-tag-rule.setting-item { margin-top: 0px }`;
+		css += `.colorful-tag-rule.is-collapsed > .cm-s-obsidian > .colorful-tag-rule { display: none; }`;
 		css += `.colorful-tag-rule.is-collapsed > .cm-s-obsidian > .setting-item { display: none; }`;
 		css += `.colorful-tag-rule { margin-top: 15px; }`;
 		css += `.colorful-tag-collapse-indicator.is-collapsed > svg { transform: rotate(-90deg); }`;
@@ -170,7 +172,7 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		let thisSetting = this.plugin.settings;
 		let styles = thisSetting.styleList;
-		let global = thisSetting.global;
+		let global = new Map(Object.entries(thisSetting.global));
 		let global_enable = new Map(Object.entries(thisSetting.global_enable));
 
 		let m = new Map(Object.entries(styles[i]));
@@ -205,7 +207,25 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 		hashtag.setText("#")
 		let content = title.nameEl.createEl("span", "cm-hashtag cm-hashtag-end cm-tag-" + tag_name);
 		content.setText(tag_name)
-		new Setting(inner)
+		let normal = inner.createDiv("colorful-tag-rule");
+		let override = inner.createDiv("setting-item colorful-tag-rule is-collapsed");
+		// override seting page
+		let override_inner = override.createDiv("cm-s-obsidian");
+		override_inner.setAttribute("style", "flex: 1;")
+		let override_title = override_inner.createDiv();
+		let ctl_override = override_title.createEl("span", "colorful-tag-collapse-indicator is-collapsed");
+		setIcon(ctl_override, "right-triangle");
+		override_title.createSpan().setText("Override global settings");
+		ctl_override.onClickEvent(() => {
+			if (ctl_override.className == "colorful-tag-collapse-indicator is-collapsed") {
+				override.className = "setting-item colorful-tag-rule";
+				ctl_override.className = "colorful-tag-collapse-indicator"
+			} else {
+				override.className = "setting-item colorful-tag-rule is-collapsed";
+				ctl_override.className = "colorful-tag-collapse-indicator is-collapsed"
+			}
+		})
+		new Setting(normal)
 			.setName("tag")
 			.addText(text => text
 				.setValue(tag_name)
@@ -228,8 +248,12 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 			}
 			// replace " " to "-"
 			let attr_alt = attr.replace(/ /g, "-");
+			let html = normal;
+			if (global_enable.get(attr_alt)) {
+				html = override_inner;
+			}
 
-			new Setting(inner)
+			let setting = new Setting(html)
 				.setName(attr)
 				.addText(text => text
 					.setValue(m.get(attr_alt))
@@ -240,6 +264,10 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 						this.plugin.saveSettings();
 					}))
 				.setClass(`setting-${attr_alt}`)
+			if (global_enable.get(attr_alt)) {
+				let override_text = setting.components[0] as TextComponent;
+				override_text.setPlaceholder(global.get(attr_alt));
+			}
 		}
 		new Setting(inner)
 			.addButton(btn => btn
