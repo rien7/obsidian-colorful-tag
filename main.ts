@@ -11,8 +11,8 @@ interface ColorfulTagSetting {
 const DEFAULT_SETTINGS: ColorfulTagSetting = {
 	global_enable: new Map(),
 	global: new Map(),
-	attrList: ["radius", "prefix", "suffix", "background color", "text color", "text size"],
-	defaultStyle: new Map<string, any>([['radius', "4px"], ['prefix', ''], ['suffix', ''], ['background -color', ''], ['text-color', '#000'], ['text-size', '16px']]),
+	attrList: ["radius", "prefix", "suffix", "background color", "text color", "text size", "border", "font weight"],
+	defaultStyle: new Map<string, any>([['radius', '4px'], ['prefix', ''], ['suffix', ''], ['background-color', '#fff'], ['text-color', '#000'], ['text-size', '12px'], ['border', 'none'], ['font-weight', '900']]),
 	styleList: new Array()
 }
 
@@ -49,25 +49,28 @@ export default class ColorfulTag extends Plugin {
 			tag = tag.replace(/\\/g, "\\\\");
 			// replace / to \/, because / is a special character in css
 			tag = tag.replace(/\//g, "\\/");
-			let background_color = global.get("background-color") || m.get("background-color") || default_style.get("background-color");
-			let text_color = global.get("text-color") || m.get("text-color") || default_style.get("text-color");
-			let prefix = global.get("prefix") || m.get("prefix") || default_style.get("prefix");
-			let suffix = global.get("suffix") || m.get("suffix") || default_style.get("suffix");
-			let radius = global.get("radius") || m.get("radius") || default_style.get("radius");
-			let text_size = global.get("text-size") || m.get("text-size") || default_style.get("text-size");
+			let background_color = global.get("background-color") || m.get("background-color") || "";
+			let text_color = global.get("text-color") || m.get("text-color") || "";
+			let prefix = global.get("prefix") || m.get("prefix") || "";
+			let suffix = global.get("suffix") || m.get("suffix") || "";
+			let radius = global.get("radius") || m.get("radius") || "";
+			let text_size = global.get("text-size") || m.get("text-size") || "";
+			let border = global.get("border") || m.get("border") || "";
+			let font_weight = global.get("font-weight") || m.get("font-weight") || "";
+			let padding_size = "";
 
 			// reading view: body a.tag[href="#${tag}"] => font-weight, background-color, text-color, text-size, [radius, prefix, suffix, padding], white-space, border
 			// edit view: body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag} => font-weight, background-color, text-color, text-size, white-space, border
 			//                                .cm-hashtag-begin => prefix, radius, padding
 			//						          .cm-hashtag-end => suffix, radius, padding
 			// reading view && edit view
-			css += `body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag} { font-weight: 900; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; white-space: nowrap; border: none; }`;
+			css += `body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag} { font-weight: ${font_weight}; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; white-space: nowrap; border: ${border}; }`;
 			// only reading view
-			css += `body a.tag[href="#${tag}"] { border-radius: ${radius}; padding-left: 6px; padding-right: 6px; }`;
+			css += `body a.tag[href="#${tag}"] { border-radius: ${radius}; padding-left: ${padding_size}; padding-right: ${padding_size}; }`;
 			// edit view begin
-			css += `body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag}.cm-hashtag-begin { border-top-right-radius: 0; border-bottom-right-radius: 0; padding-right: 0px; border-top-left-radius: ${radius}; border-bottom-left-radius: ${radius}; padding-left: 6px; }`;
+			css += `body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag}.cm-hashtag-begin { border-top-right-radius: 0; border-bottom-right-radius: 0; padding-right: 0px; border-top-left-radius: ${radius}; border-bottom-left-radius: ${radius}; padding-left: ${padding_size}; }`;
 			// edit view end
-			css += `body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag}.cm-hashtag-end { border-bottom-left-radius: 0; border-top-left-radius: 0; padding-left: 0px; border-top-right-radius: ${radius}; border-bottom-right-radius: ${radius}; padding-right: 6px; }`;
+			css += `body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag}.cm-hashtag-end { border-bottom-left-radius: 0; border-top-left-radius: 0; padding-left: 0px; border-top-right-radius: ${radius}; border-bottom-right-radius: ${radius}; padding-right: ${padding_size}; }`;
 			if (prefix != "") {
 				css += `:is(body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag}.cm-hashtag-begin)::before { content: "${prefix} "; }`;
 			}
@@ -277,11 +280,13 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 				.addText(text => text
 					.setValue(global.get(attr_alt))
 					.setDisabled(!global_enable.get(attr_alt))
+					.setPlaceholder(thisSetting.defaultStyle.get(attr_alt))
 					.onChange(async (value) => {
 						global.set(attr_alt, value);
 						this.plugin.settings.global = Object.fromEntries(global);
 						this.plugin.saveSettings();
 					}))
+					.setDesc("leave blank to use default value")
 				.addToggle(toggle => toggle
 					.setValue(global_enable.get(attr_alt) || false)
 					.onChange(v => {
