@@ -1,18 +1,22 @@
 import { App, Modal, Plugin, PluginSettingTab, setIcon, Setting, TextComponent } from 'obsidian';
 
 interface ColorfulTagSetting {
+	firstTime: boolean;
 	global_enable: Object;
 	global: Object;
 	attrList: Array<string>;
 	defaultStyle: Map<string, any>;
+	defaultGlobal: Map<string, boolean>;
 	styleList: Array<Object>;
 }
 
 const DEFAULT_SETTINGS: ColorfulTagSetting = {
+	firstTime: true,
 	global_enable: new Map(),
 	global: new Map(),
 	attrList: ["radius", "prefix", "suffix", "background color", "text color", "text size", "border", "font weight"],
 	defaultStyle: new Map<string, any>([['radius', '4px'], ['prefix', ''], ['suffix', ''], ['background-color', '#fff'], ['text-color', '#000'], ['text-size', '12px'], ['border', 'none'], ['font-weight', '900']]),
+	defaultGlobal: new Map<string, boolean>([['radius', false], ['prefix', false], ['suffix', false], ['background-color', false], ['text-color', false], ['text-size', false], ['border', true], ['font-weight', true]]),
 	styleList: new Array()
 }
 
@@ -36,7 +40,6 @@ export default class ColorfulTag extends Plugin {
 		let styles = this.settings.styleList;
 		let global = new Map(Object.entries(this.settings.global));
 		let global_enable = new Map(Object.entries(this.settings.global_enable));
-		let default_style = new Map(this.settings.defaultStyle);
 
 		let css = "";
 		let el = head.createEl("style", { "type": "text/css", "attr": { "colorful-tag-plugin": "" } });
@@ -104,6 +107,21 @@ export default class ColorfulTag extends Plugin {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 		this.settings.attrList = DEFAULT_SETTINGS.attrList;
 		this.settings.defaultStyle = DEFAULT_SETTINGS.defaultStyle;
+		this.settings.defaultGlobal = DEFAULT_SETTINGS.defaultGlobal;
+		if (this.settings.firstTime) {
+			this.settings.firstTime = false;
+			let global_enable = new Map(Object.entries(this.settings.global_enable));
+			let global = new Map(Object.entries(this.settings.global));
+			for (let attr of this.settings.attrList) {
+				let attr_alt = attr.replace(/ /g, "-");
+				if (this.settings.defaultGlobal.get(attr_alt)) {
+					global_enable.set(attr_alt, true);
+					global.set(attr_alt, this.settings.defaultStyle.get(attr_alt));
+				}
+			}
+			this.settings.global_enable = Object.fromEntries(global_enable);
+			this.settings.global = Object.fromEntries(global);
+		}
 		this.refresh();
 	}
 
