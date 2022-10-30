@@ -48,10 +48,10 @@ export default class ColorfulTag extends Plugin {
 			let m = new Map(Object.entries(styles[i]));
 			if (!m.get("enable")) { continue; }
 			let tag = m.get("tag");
-			// replace \ to \\, because \ is a special character in css
-			tag = tag.replace(/\\/g, "\\\\");
+			let tag_lp = tag;
 			// replace / to \/, because / is a special character in css
 			tag = tag.replace(/\//g, "\\/");
+			tag_lp = tag_lp.replace(/\//g, "");
 			let background_color = m.get("background-color") || global.get("background-color") || "";
 			let text_color = m.get("text-color") || global.get("text-color") || "";
 			let prefix = m.get("prefix") || global.get("prefix") || "";
@@ -67,18 +67,18 @@ export default class ColorfulTag extends Plugin {
 			//                                .cm-hashtag-begin => prefix, radius, padding
 			//						          .cm-hashtag-end => suffix, radius, padding
 			// reading view && edit view
-			css += `body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag} { font-weight: ${font_weight}; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; white-space: nowrap; border: ${border}; }`;
+			css += `body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag_lp} { font-weight: ${font_weight}; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; white-space: nowrap; border: ${border}; }`;
 			// only reading view
 			css += `body a.tag[href="#${tag}"] { border-radius: ${radius}; padding-left: ${padding_size}; padding-right: ${padding_size}; }`;
 			// edit view begin
-			css += `body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag}.cm-hashtag-begin { border-top-right-radius: 0; border-bottom-right-radius: 0; padding-right: 0px; border-top-left-radius: ${radius}; border-bottom-left-radius: ${radius}; padding-left: ${padding_size}; }`;
+			css += `body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag_lp}.cm-hashtag-begin { border-top-right-radius: 0; border-bottom-right-radius: 0; padding-right: 0px; border-top-left-radius: ${radius}; border-bottom-left-radius: ${radius}; padding-left: ${padding_size}; }`;
 			// edit view end
-			css += `body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag}.cm-hashtag-end { border-bottom-left-radius: 0; border-top-left-radius: 0; padding-left: 0px; border-top-right-radius: ${radius}; border-bottom-right-radius: ${radius}; padding-right: ${padding_size}; }`;
+			css += `body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag_lp}.cm-hashtag-end { border-bottom-left-radius: 0; border-top-left-radius: 0; padding-left: 0px; border-top-right-radius: ${radius}; border-bottom-right-radius: ${radius}; padding-right: ${padding_size}; }`;
 			if (prefix != "") {
-				css += `:is(body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag}.cm-hashtag-begin)::before { content: "${prefix} "; }`;
+				css += `:is(body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag_lp}.cm-hashtag-begin)::before { content: "${prefix} "; }`;
 			}
 			if (suffix != "") {
-				css += `:is(body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag}.cm-hashtag-end)::after { content: " ${suffix}"; }`;
+				css += `:is(body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag_lp}.cm-hashtag-end)::after { content: " ${suffix}"; }`;
 			}
 		}
 		// invisible setting items while the global setting is enable
@@ -203,9 +203,11 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 				ctl.className = "colorful-tag-collapse-indicator is-collapsed"
 			}
 		})
-		let hashtag = title.nameEl.createEl("span", "cm-hashtag cm-hashtag-begin cm-tag-" + tag_name);
+		let tag_lp = tag_name;
+		tag_lp = tag_lp.replace(/\//g, "");
+		let hashtag = title.nameEl.createEl("span", "cm-hashtag cm-hashtag-begin cm-tag-" + tag_lp);
 		hashtag.setText("#")
-		let content = title.nameEl.createEl("span", "cm-hashtag cm-hashtag-end cm-tag-" + tag_name);
+		let content = title.nameEl.createEl("span", "cm-hashtag cm-hashtag-end cm-tag-" + tag_lp);
 		content.setText(tag_name)
 		let normal = inner.createDiv("colorful-tag-rule");
 		let override = inner.createDiv("setting-item colorful-tag-rule is-collapsed");
