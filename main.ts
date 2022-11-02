@@ -8,6 +8,7 @@ interface ColorfulTagSetting {
 	defaultStyle: Map<string, any>;
 	defaultGlobal: Map<string, boolean>;
 	styleList: Array<Object>;
+	tagDetail: Object;
 }
 
 const DEFAULT_SETTINGS: ColorfulTagSetting = {
@@ -17,7 +18,8 @@ const DEFAULT_SETTINGS: ColorfulTagSetting = {
 	attrList: ["radius", "prefix", "suffix", "background color", "text color", "text size", "border", "font weight"],
 	defaultStyle: new Map<string, any>([['radius', '4px'], ['prefix', ''], ['suffix', ''], ['background-color', '#fff'], ['text-color', '#000'], ['text-size', '12px'], ['border', 'none'], ['font-weight', '900']]),
 	defaultGlobal: new Map<string, boolean>([['radius', false], ['prefix', false], ['suffix', false], ['background-color', false], ['text-color', false], ['text-size', false], ['border', true], ['font-weight', true]]),
-	styleList: new Array()
+	styleList: new Array(),
+	tagDetail: new Map(),
 }
 
 export default class ColorfulTag extends Plugin {
@@ -28,10 +30,158 @@ export default class ColorfulTag extends Plugin {
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new ColorfulTagSettingTab(this.app, this));
+		this.addListenerForFileOpen();
+		this.addPopupCss();
 	}
 
 	onunload() {
+		// remove listener
+		this.app.workspace.off("active-leaf-change", this.addListenerForTag);
+	}
 
+	addPopupCss() {
+		let head = document.querySelector("head")!;
+		let del = head.querySelectorAll("[colorful-tag-plugin-popup]");
+		del.forEach((d) => { d.remove() });
+		let el = head.createEl("style", { "type": "text/css", "attr": { "colorful-tag-plugin-popup": "" } });
+		let css = `
+		#colorful-tag-popup {
+			position: absolute;
+			z-index: 100;
+			background-color: white;
+			border: 1px solid black;
+			border-radius: 4px;
+			padding: 4px;
+		}
+		.colorful-tag-popup-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 4px;
+		}
+		.colorful-tag-popup-meta {
+			font-size: 12px;
+		}
+		`;
+		el.setText(css);
+	}
+
+	async addPopup(event: MouseEvent, tag: string, filename: string, pos: string) {
+		// get mouse position
+		let countdown = 3;
+		let x = event.clientX;
+		let y = event.clientY;
+		
+		let popup = document.createElement("div");
+		// set id
+		popup.setAttribute("id", "colorful-tag-popup");
+		popup.style.left = x + 20 + "px";
+		popup.style.top = y + 20 + "px";
+		popup.style.minWidth = "100px";
+		popup.style.minHeight = "50px";
+		let header = popup.createDiv("colorful-tag-popup-header");
+		header.setText(tag);
+		let meta = popup.createDiv("colorful-tag-popup-meta");
+		meta.setText(filename + " " + pos);
+		let body = new Setting(popup);
+		// popup.style.display = "none";
+		let tagDetail = new Map(Object.entries(this.settings.tagDetail));
+		let tagDetailObj = tagDetail.get(filename);
+		if (tagDetailObj == undefined) {
+			body.addButton((b) => {
+				b.setButtonText("Add");
+				b.onClick(async () => {
+					tagDetail.set(filename, new Map([[`${tag}-${pos}`, new Map()]]));
+					this.settings.tagDetail = Object.fromEntries(tagDetail);
+					this.saveSettings();
+					await this.saveData(this.settings);
+				});
+			})
+		} else {
+			let tagDetailMap = new Map<string, any>(Object.entries(tagDetailObj));
+			let tagDetailMapObj = tagDetailMap.get(`${tag}-${pos}`);
+			console.log(tagDetailMapObj);
+			if (tagDetailMapObj == undefined) {
+				body.addButton((b) => {
+					b.setButtonText("Add");
+					b.onClick(async () => {
+						tagDetailMap.set(`${tag}-${pos}`, Object.fromEntries(new Map([["test", "testtest"]])));
+						tagDetail.set(filename, Object.fromEntries(tagDetailMap));
+						console.log(tagDetail);
+						this.settings.tagDetail = Object.fromEntries(tagDetail);
+						console.log("saved");
+						console.log(this.settings.tagDetail);
+						await this.saveData(this.settings);
+					});
+				})
+			} else {
+				let tagDetailMapMap = new Map(Object.entries(tagDetailMapObj));
+				for (let [k, v] of tagDetailMapMap) {
+					let item = body.addText((t) => {
+						t.setValue(v as string);
+						t.onChange(async (value) => {
+							tagDetailMapMap.set(k, value);
+							tagDetailMap.set(`${tag}-${pos}`, Object.fromEntries(tagDetailMapMap));
+							tagDetail.set(filename, Object.fromEntries(tagDetailMap));
+							this.settings.tagDetail = Object.fromEntries(tagDetail);
+							await this.saveData(this.settings);
+						});
+					});
+					item.setName(k);
+				}
+			}
+		}
+		document.body.appendChild(popup);
+		this.registerDomEvent(popup, "mouseover", () => {
+			countdown = 9999;
+		})
+		this.registerDomEvent(popup, "mouseout", () => {
+			countdown = 3;
+		});
+		// sleep 1s and decrease countdown, if countdown == 0, delete popup
+		let timer = setInterval(() => {
+			countdown--;
+			if (countdown == 0) {
+				popup.remove();
+				clearInterval(timer);
+			}
+		}, 1000);
+	}
+
+	async addListenerForTag() {
+		let _file = this.app.workspace.getActiveFile();
+		if (_file == null) return;
+		let file = _file!;
+		let cache = this.app.metadataCache.getFileCache(file);
+		if (cache?.tags == null) return;
+		// query tag on this page
+		let tags = document.querySelectorAll(".cm-hashtag.cm-hashtag-end");
+		let i = 0;
+		tags.forEach((tag) => {
+			//get previous element
+			let pos = cache?.tags![i].position;
+			let tagname = cache?.tags![i].tag!;
+			let prev = tag.previousElementSibling!;
+			this.registerDomEvent(tag as HTMLElement, "mouseover", (e) => {
+				// check if popup exists
+				let popup = document.querySelector("#colorful-tag-popup");
+				if (popup != null)
+					return
+				this.addPopup(e as MouseEvent, tagname, file.path, pos!.start.line + ":" + pos!.start.col);
+			});
+			this.registerDomEvent(prev as HTMLElement, "mouseover", (e) => {
+				let popup = document.querySelector("#colorful-tag-popup");
+				if (popup != null)
+					return
+				this.addPopup(e as MouseEvent, tagname, file.path, pos!.start.line + ":" + pos!.start.col);
+			});
+			i++;
+		});
+	}
+	async addListenerForFileOpen() {
+		this.app.workspace.on("active-leaf-change", async () => {
+			await this.addListenerForTag();
+		});
 	}
 
 	async refresh() {
