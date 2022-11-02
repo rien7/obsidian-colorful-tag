@@ -151,11 +151,24 @@ class SampleModal extends Modal {
 
 class ColorfulTagSettingTab extends PluginSettingTab {
 	plugin: ColorfulTag;
+	_el: HTMLElement;
 
 	constructor(app: App, plugin: ColorfulTag) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
+
+	isBefore(el1: HTMLElement, el2: HTMLElement) {
+		if (el2.parentNode == el1.parentNode) {
+			for (let cur = el1.previousSibling; cur && cur.nodeType !== 9; cur = cur.previousSibling) {
+				if (cur == el2) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	refreshHeader(hashtag: HTMLSpanElement, content: HTMLSpanElement, tag: string) {
 		let hashlist = hashtag.classList;
 		let contlist = content.classList;
@@ -177,7 +190,39 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 
 		let m = new Map(Object.entries(styles[i]));
 		let tag_name = m.get("tag");
-		let div = containerEl.createDiv("colorful-tag-rule is-collapsed");
+		let div = containerEl.createDiv("colorful-tag-rule colorful-tag-rule-outer is-collapsed");
+		div.setAttr("idx", i);
+		div.draggable = true;
+		div.ondragover = (e) => {
+			let target = e.target as HTMLElement;
+			target = target.matchParent(".colorful-tag-rule-outer") as HTMLElement;
+			if (target.classList.contains("colorful-tag-rule-outer")) {
+				if (this.isBefore(this._el, target))
+				target.parentNode?.insertBefore(this._el, target);
+				else
+				target.parentNode?.insertBefore(this._el, target.nextSibling);
+				let tmp = this._el.getAttribute("idx");
+				this._el.setAttribute("idx", target.getAttribute("idx")!);
+				target.setAttribute("idx", tmp!);
+				// swap styles
+				let tmp2 = styles[parseInt(this._el.getAttribute("idx")!)!];
+				styles[parseInt(this._el.getAttribute("idx")!)!] = styles[parseInt(target.getAttribute("idx")!)!];
+				styles[parseInt(target.getAttribute("idx")!)!] = tmp2;
+			}
+		}
+		div.ondragend = () => {
+			// save styles
+			thisSetting.styleList = styles;
+			this.plugin.saveSettings();
+		}
+		div.ondragstart = (e) => {
+			let target = e.target as HTMLElement;
+			if (target.classList.contains("colorful-tag-rule-outer")) {
+				this._el = target;
+				e.dataTransfer?.setData("effectAllowed", "move");
+				e.dataTransfer?.setData("text/plain", "");
+			}
+		}
 		let inner = div.createDiv("cm-s-obsidian");
 		let header = inner.createDiv("cm-line");
 		let title = new Setting(header)
