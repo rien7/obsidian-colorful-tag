@@ -31,7 +31,6 @@ export default class ColorfulTag extends Plugin {
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new ColorfulTagSettingTab(this.app, this));
 		this.addListenerForFileOpen();
-		this.addPopupCss();
 	}
 
 	onunload() {
@@ -39,31 +38,68 @@ export default class ColorfulTag extends Plugin {
 		this.app.workspace.off("active-leaf-change", this.addListenerForTag);
 	}
 
-	addPopupCss() {
+	addPopupCss(tag: string) {
 		let head = document.querySelector("head")!;
 		let del = head.querySelectorAll("[colorful-tag-plugin-popup]");
 		del.forEach((d) => { d.remove() });
 		let el = head.createEl("style", { "type": "text/css", "attr": { "colorful-tag-plugin-popup": "" } });
-		let css = `
-		#colorful-tag-popup {
-			position: absolute;
-			z-index: 100;
-			background-color: white;
-			border: 1px solid black;
-			border-radius: 4px;
-			padding: 4px;
+		let styles = this.settings.styleList;
+		let global = new Map(Object.entries(this.settings.global));
+		let style = new Map<string, any>();
+		tag = tag.substring(1);
+		for (let i in styles) {
+			let m = new Map(Object.entries(styles[i]));
+			if (!m.get("enable")) continue;
+			if (m.get("tag") == tag) {
+				style = m;
+				break;
+			}
 		}
-		.colorful-tag-popup-header {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			margin-bottom: 4px;
+		let tag_lp = tag;
+		// replace / to \/, because / is a special character in css
+		tag = tag.replace(/\//g, "\\/");
+		tag_lp = tag_lp.replace(/\//g, "");
+		let background_color = style.get("background-color") || global.get("background-color") || "";
+		let text_color = style.get("text-color") || global.get("text-color") || "";
+		let prefix = style.get("prefix") || global.get("prefix") || "";
+		let suffix = style.get("suffix") || global.get("suffix") || "";
+		let radius = style.get("radius") || global.get("radius") || "";
+		let text_size = style.get("text-size") || global.get("text-size") || "";
+		let font_weight = style.get("font-weight") || global.get("font-weight") || "";
+		let css = "";
+		css += `#colorful-tag-popup { position: absolute; z-index: 100; }`;
+		css += `.colorful-tag-popup-header { display: flex; padding: 5px 10px; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; font-weight: ${font_weight}; border-radius: 10px 10px 0 0; }`;
+		css += `.colorful-tag-popup-pin { margin-left: auto; }`;
+		css += `.colorful-tag-popup-pin.pinned > svg { transform: rotate(45deg); }`;
+		if (prefix != "") {
+			css += `.colorful-tag-popup-header:before { content: "${prefix}"; }`;
 		}
-		.colorful-tag-popup-meta {
-			font-size: 12px;
+		if (suffix != "") {
+			css += `.colorful-tag-popup-header:after { content: "${suffix}"; }`;
 		}
-		`;
+		css += `.colorful-tag-popup-body { padding: 5px 10px; border: 4px solid ${background_color}; border-radius: 0 0 10px 10px; border-top: none; background-color: #fff; }`;
+		css += `#colorful-tag-popup input[type="text"] { border: none; }`;
+		css += `#colorful-tag-popup input[type="text"]:focus { border: inherit; }`;
 		el.setText(css);
+	}
+
+	async refreshPopupBody(body: Setting, tag: string, filename: string, pos: string) {
+		let tagDetail = new Map(Object.entries(this.settings.tagDetail));
+		let tags = new Map<string, any>(Object.entries(tagDetail.get(filename)));
+		let items = new Map(Object.entries(tags.get(`${tag}-${pos}`)));
+		for (let [k, v] of items.entries()) {
+			let item = body.addText((t) => {
+				t.setValue(v as string);
+				t.onChange(async (value) => {
+					items.set(k, value);
+					tags.set(`${tag}-${pos}`, Object.fromEntries(items));
+					tagDetail.set(filename, Object.fromEntries(tags));
+					this.settings.tagDetail = Object.fromEntries(tagDetail);
+					await this.saveData(this.settings);
+				});
+			});
+			item.setName(k);
+		}
 	}
 
 	async addPopup(event: MouseEvent, tag: string, filename: string, pos: string) {
@@ -73,6 +109,7 @@ export default class ColorfulTag extends Plugin {
 		let y = event.clientY;
 		
 		let popup = document.createElement("div");
+		this.addPopupCss(tag);
 		// set id
 		popup.setAttribute("id", "colorful-tag-popup");
 		popup.style.left = x + 20 + "px";
@@ -81,54 +118,50 @@ export default class ColorfulTag extends Plugin {
 		popup.style.minHeight = "50px";
 		let header = popup.createDiv("colorful-tag-popup-header");
 		header.setText(tag);
-		let meta = popup.createDiv("colorful-tag-popup-meta");
-		meta.setText(filename + " " + pos);
+		let pin = header.createDiv("colorful-tag-popup-pin");
+		setIcon(pin, "pin");
+		this.registerDomEvent(pin, "click", () => {
+			if (pin.classList.contains("pinned")) {
+				pin.classList.remove("pinned");
+				countdown = 3;
+			} else {
+				pin.classList.add("pinned");
+				countdown = 99999;
+			}
+		});
 		let body = new Setting(popup);
-		// popup.style.display = "none";
+		body.setClass("colorful-tag-popup-body");
 		let tagDetail = new Map(Object.entries(this.settings.tagDetail));
-		let tagDetailObj = tagDetail.get(filename);
-		if (tagDetailObj == undefined) {
+		let _file = tagDetail.get(filename);
+		if (_file == undefined) {
 			body.addButton((b) => {
 				b.setButtonText("Add");
 				b.onClick(async () => {
-					tagDetail.set(filename, new Map([[`${tag}-${pos}`, new Map()]]));
+					tagDetail.set(filename, Object.fromEntries(new Map([[`${tag}-${pos}`, Object.fromEntries(new Map([["test", "testtest"]]))]])));
 					this.settings.tagDetail = Object.fromEntries(tagDetail);
 					this.saveSettings();
 					await this.saveData(this.settings);
+					body.clear();
+					await this.refreshPopupBody(body, tag, filename, pos);
 				});
 			})
 		} else {
-			let tagDetailMap = new Map<string, any>(Object.entries(tagDetailObj));
-			let tagDetailMapObj = tagDetailMap.get(`${tag}-${pos}`);
-			console.log(tagDetailMapObj);
-			if (tagDetailMapObj == undefined) {
+			let _tag = new Map<string, any>(Object.entries(_file));
+			let _items = _tag.get(`${tag}-${pos}`);
+			if (_items == undefined) {
 				body.addButton((b) => {
 					b.setButtonText("Add");
 					b.onClick(async () => {
-						tagDetailMap.set(`${tag}-${pos}`, Object.fromEntries(new Map([["test", "testtest"]])));
-						tagDetail.set(filename, Object.fromEntries(tagDetailMap));
-						console.log(tagDetail);
+						_tag.set(`${tag}-${pos}`, Object.fromEntries(new Map([["test", "testtest"]])));
+						tagDetail.set(filename, Object.fromEntries(_file));
 						this.settings.tagDetail = Object.fromEntries(tagDetail);
-						console.log("saved");
-						console.log(this.settings.tagDetail);
 						await this.saveData(this.settings);
+						body.clear();
+						await this.refreshPopupBody(body, tag, filename, pos);
 					});
 				})
 			} else {
-				let tagDetailMapMap = new Map(Object.entries(tagDetailMapObj));
-				for (let [k, v] of tagDetailMapMap) {
-					let item = body.addText((t) => {
-						t.setValue(v as string);
-						t.onChange(async (value) => {
-							tagDetailMapMap.set(k, value);
-							tagDetailMap.set(`${tag}-${pos}`, Object.fromEntries(tagDetailMapMap));
-							tagDetail.set(filename, Object.fromEntries(tagDetailMap));
-							this.settings.tagDetail = Object.fromEntries(tagDetail);
-							await this.saveData(this.settings);
-						});
-					});
-					item.setName(k);
-				}
+				await this.refreshPopupBody(body, tag, filename, pos);
 			}
 		}
 		document.body.appendChild(popup);
@@ -136,7 +169,9 @@ export default class ColorfulTag extends Plugin {
 			countdown = 9999;
 		})
 		this.registerDomEvent(popup, "mouseout", () => {
-			countdown = 3;
+			if (!pin.classList.contains("pinned")) {
+				countdown = 3;
+			}
 		});
 		// sleep 1s and decrease countdown, if countdown == 0, delete popup
 		let timer = setInterval(() => {
@@ -231,13 +266,6 @@ export default class ColorfulTag extends Plugin {
 				css += `:is(body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag_lp}.cm-hashtag-end)::after { content: " ${suffix}"; }`;
 			}
 		}
-		// invisible setting items while the global setting is enable
-		// for (let attr of this.settings.attrList) {
-		// 	let attr_alt = attr.replace(/ /g, "-");
-		// 	if (global_enable.get(attr_alt)) {
-		// 		css += `.setting-${attr_alt} { display: none; }`;
-		// 	}
-		// }
 		// plugin setting
 		css += `.colorful-tag-rule.setting-item { margin-top: 0px }`;
 		css += `.colorful-tag-rule.is-collapsed > .cm-s-obsidian > .colorful-tag-rule { display: none; }`;
@@ -390,13 +418,8 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 		}
 		setIcon(ctl, "right-triangle");
 		ctl.onClickEvent(() => {
-			if (ctl.className == "colorful-tag-collapse-indicator is-collapsed") {
-				div.className = "colorful-tag-rule";
-				ctl.className = "colorful-tag-collapse-indicator"
-			} else {
-				div.className = "colorful-tag-rule is-collapsed";
-				ctl.className = "colorful-tag-collapse-indicator is-collapsed"
-			}
+			ctl.classList.toggle("is-collapsed");
+			div.classList.toggle("is-collapsed");
 		})
 		let tag_lp = tag_name;
 		tag_lp = tag_lp.replace(/\//g, "");
@@ -504,13 +527,8 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 		globalTitle.setText("Global Setting");
 		setIcon(globalCtl, "right-triangle");
 		globalCtl.onClickEvent(() => {
-			if (globalCtl.className == "colorful-tag-collapse-indicator is-collapsed") {
-				globalDiv.className = "colorful-tag-rule";
-				globalCtl.className = "colorful-tag-collapse-indicator"
-			} else {
-				globalDiv.className = "colorful-tag-rule is-collapsed";
-				globalCtl.className = "colorful-tag-collapse-indicator is-collapsed"
-			}
+			globalCtl.classList.toggle("is-collapsed");
+			globalDiv.classList.toggle("is-collapsed");
 		})
 		// create setting for every attr in attrList
 		let global = new Map(Object.entries(thisSetting.global));
