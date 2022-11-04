@@ -1,4 +1,5 @@
 import { randomInt, randomUUID } from 'crypto';
+import moment from 'moment';
 import { App, CachedMetadata, Modal, Plugin, PluginSettingTab, setIcon, Setting, TextComponent, TFile } from 'obsidian';
 
 interface ColorfulTagSetting {
@@ -131,7 +132,7 @@ export default class ColorfulTag extends Plugin {
 		let tag_item = new Map(Object.entries(this.settings.tagItem));
 		let _tag_item = tag_item.get(tag);
 		if (_tag_item == undefined) return;
-		let tag_item_map = new Map(Object.entries(_tag_item));
+		let tag_item_map = new Map<string, string>(Object.entries(_tag_item));
 		let body = popup.createDiv("colorful-tag-popup-body");
 		let tagDetail = new Map(Object.entries(this.settings.tagDetail));
 		let _file = tagDetail.get(filename);
@@ -143,7 +144,17 @@ export default class ColorfulTag extends Plugin {
 				b.onClick(async () => {
 					let item = new Map<string, any>([["_i", i], ["_l", line], ["_c", col]]);
 					for (let [k, v] of tag_item_map.entries()) {
-						item.set(v as string, "");
+						if (k.charAt(0) != "#") { continue }
+						let defaultSetting = tag_item_map.get("default-"+k) || "";
+						// replace {{DATE}} of defaultSetting to cur date
+						defaultSetting = defaultSetting.replace(/{{DATE}}/g, moment().format("YYYY-MM-DD"));
+						// replace {{TIME}} of defaultSetting to cur time
+						defaultSetting = defaultSetting.replace(/{{TIME}}/g, moment().format("HH:mm:ss"));
+						// replace {{DATETIME}} of defaultSetting to cur datetime
+						defaultSetting = defaultSetting.replace(/{{DATETIME}}/g, moment().format("YYYY-MM-DD HH:mm:ss"));
+						// replace {{TAG}} of defaultSetting to cur tag
+						defaultSetting = defaultSetting.replace(/{{TAG}}/g, tag);
+						item.set(v as string, defaultSetting);
 					}
 					tagDetail.set(filename, Object.fromEntries(new Map([[`${tag}-${pos}`, Object.fromEntries(item)]])));
 					this.settings.tagDetail = Object.fromEntries(tagDetail);
@@ -166,7 +177,17 @@ export default class ColorfulTag extends Plugin {
 						b.onClick(async () => {
 							let item = new Map<string, any>([["_i", i], ["_l", line], ["_c", col]]);
 							for (let [k, v] of tag_item_map.entries()) {
-								item.set(v as string, "");
+								if (k.charAt(0) != "#") { continue }
+								let defaultSetting = tag_item_map.get("default-"+k) || "";
+								// replace {{DATE}} of defaultSetting to cur date
+								defaultSetting = defaultSetting.replace(/{{DATE}}/g, moment().format("YYYY-MM-DD"));
+								// replace {{TIME}} of defaultSetting to cur time
+								defaultSetting = defaultSetting.replace(/{{TIME}}/g, moment().format("HH:mm:ss"));
+								// replace {{DATETIME}} of defaultSetting to cur datetime
+								defaultSetting = defaultSetting.replace(/{{DATETIME}}/g, moment().format("YYYY-MM-DD HH:mm:ss"));
+								// replace {{TAG}} of defaultSetting to cur tag
+								defaultSetting = defaultSetting.replace(/{{TAG}}/g, tag);
+								item.set(v as string, defaultSetting);
 							}
 							_tag.set(`${tag}-${pos}`, Object.fromEntries(item));
 							tagDetail.set(filename, Object.fromEntries(_tag));
@@ -262,6 +283,7 @@ export default class ColorfulTag extends Plugin {
 		let tag_item = new Map<string, string>(Object.entries(_tag_item.get(tag)));
 		for (let [k, v] of tag_item.entries()) {
 			if (v.charAt(0) == "_") continue;
+			if (k.charAt(0) != "#") continue;
 			let item = new Setting(body)
 				.addText((t) => {
 					let item = items.get(v) as string;
@@ -305,7 +327,9 @@ export default class ColorfulTag extends Plugin {
 				if (new Map(Object.entries(__tag_item)).size == 0) { continue; };
 				let _ori = new Map(Object.entries(v));
 				let _i = _ori.get("_i") as number;
+				if (_i > tags.length) { continue; }
 				let cur = tags[_i];
+				if (cur == undefined) { continue; }
 				_ori.set("_l", cur.position.start.line);
 				_ori.set("_c", cur.position.start.col);
 				_new.set(`${cur.tag}-${cur.position.start.offset}`, Object.fromEntries(_ori));
@@ -570,15 +594,18 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 		let thisSetting = this.plugin.settings;
 		let tagItem = new Map(Object.entries(thisSetting.tagItem));
 		let _this_tag_item = tagItem.get(tag_name);
-		let this_tag_item = new Map();
+		let this_tag_item = new Map<string, string>();
 		if (_this_tag_item) {
 			this_tag_item = new Map(Object.entries(_this_tag_item));
 		}
 		for (let [key, value] of this_tag_item.entries()) {
+			if (key.charAt(0) != "#") { continue; }
+			let defaultSetting = this_tag_item.get("default-"+key) || "";
 			new Setting(item_setting)
-				.setName("key")
+				// .setName("key")
 				.addText(text => text
 					.setValue(value)
+					.setPlaceholder("key")
 					.onChange(async (value) => {
 						this_tag_item.set(key, value);
 						tagItem.set(tag_name, Object.fromEntries(this_tag_item));
@@ -595,6 +622,26 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 					// 	this.plugin.saveSettings();
 					// }))
 				)
+				.addText(text => text
+					.setValue(defaultSetting)
+					.setPlaceholder("default value")
+					.onChange(async (value) => {
+						this_tag_item.set("default-"+key, value);
+						tagItem.set(tag_name, Object.fromEntries(this_tag_item));
+						thisSetting.tagItem = Object.fromEntries(tagItem);
+						this.plugin.saveSettings();
+					}))
+				.addButton(btn => btn
+					.setIcon("trash-2")
+					.setWarning()
+					.onClick(async () => {
+						this_tag_item.delete(key);
+						this_tag_item.delete("default-"+key);
+						tagItem.set(tag_name, Object.fromEntries(this_tag_item));
+						thisSetting.tagItem = Object.fromEntries(tagItem);
+						this.plugin.saveSettings();
+						this.refreshTagItems(item_setting, tag_name);
+					}))
 				.setClass("colorful-tag-setting-item")
 		}
 		// add button
