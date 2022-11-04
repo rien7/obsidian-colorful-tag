@@ -1,3 +1,4 @@
+import { randomInt, randomUUID } from 'crypto';
 import { App, CachedMetadata, Modal, Plugin, PluginSettingTab, setIcon, Setting, TextComponent, TFile } from 'obsidian';
 
 interface ColorfulTagSetting {
@@ -10,6 +11,7 @@ interface ColorfulTagSetting {
 	styleList: Array<Object>;
 	// {filename:{file_size:0,tag_num:0,#tag-offset:{_i:idx,_l:line,_c:col,item:any,...}},...}
 	tagDetail: Object;
+	tagItem: Object;
 }
 
 const DEFAULT_SETTINGS: ColorfulTagSetting = {
@@ -21,12 +23,14 @@ const DEFAULT_SETTINGS: ColorfulTagSetting = {
 	defaultGlobal: new Map<string, boolean>([['radius', false], ['prefix', false], ['suffix', false], ['background-color', false], ['text-color', false], ['text-size', false], ['border', true], ['font-weight', true]]),
 	styleList: new Array(),
 	tagDetail: new Map(),
+	tagItem: new Map(),
 }
 
 export default class ColorfulTag extends Plugin {
 	settings: ColorfulTagSetting;
-	fs: Map<number, (e: Event) => void> = new Map();
+	fs: Array<(e: Event) => void> = new Array();
 	timer: NodeJS.Timer;
+	mouseIn: boolean;
 
 	async onload() {
 		await this.loadSettings();
@@ -35,6 +39,7 @@ export default class ColorfulTag extends Plugin {
 		this.addSettingTab(new ColorfulTagSettingTab(this.app, this));
 		this.app.workspace.on("active-leaf-change", async () => {
 			await this.addListenerForTag();
+			this.clearPopup();
 		});
 		this.app.metadataCache.on("changed", async (file, data, cache) => {
 			await this.handleFileChange(file, data, cache);
@@ -45,6 +50,8 @@ export default class ColorfulTag extends Plugin {
 		// remove listener
 		this.app.workspace.off("active-leaf-change", async () => {
 			await this.addListenerForTag();
+			clearInterval(this.timer);
+			this.clearPopup();
 		});
 		this.app.metadataCache.off("changed", async (file, data, cache) => {
 			await this.handleFileChange(file, data, cache);
@@ -61,19 +68,29 @@ export default class ColorfulTag extends Plugin {
 		this.removeListener();
 		// query tag on this page
 		let tags_dom = document.querySelectorAll(".cm-hashtag.cm-hashtag-end");
+		let _tag_item = new Map(Object.entries(this.settings.tagItem));
 		tags_dom.forEach((tag, i) => {
+			// get tag name
+			let tag_name = "#"+tag.getText();
+			let __tag_item = _tag_item.get(tag_name);
+			if (__tag_item == undefined) return;
+			if (new Map(Object.entries(__tag_item)).size == 0) return;
 			//get previous element
 			let prev = tag.previousElementSibling!;
 			let f = (e: Event) => { this.listener(e, i) };
+			let ff = (e: Event) => { this.mouseIn = false };
 			tag.addEventListener("mouseover", f);
 			prev.addEventListener("mouseover", f);
-			this.fs.set(i, f);
+			tag.addEventListener("mouseout", ff);
+			prev.addEventListener("mouseout", ff);
+			this.fs.push(f);
+			this.fs.push(ff);
 		});
 	}
 
 	async addPopup(event: MouseEvent, i: number) {
 		// get mouse position
-		let countdown = 3;
+		let countdown = 1;
 		let x = event.clientX;
 		let y = event.clientY;
 
@@ -104,25 +121,37 @@ export default class ColorfulTag extends Plugin {
 		this.registerDomEvent(pin, "click", () => {
 			if (pin.classList.contains("pinned")) {
 				pin.classList.remove("pinned");
-				countdown = 3;
+				countdown = 1;
+				this.mouseIn = false;
 			} else {
 				pin.classList.add("pinned");
-				countdown = 99999;
+				this.mouseIn = true;
 			}
 		});
-		let body = new Setting(popup);
-		body.setClass("colorful-tag-popup-body");
+		let tag_item = new Map(Object.entries(this.settings.tagItem));
+		let _tag_item = tag_item.get(tag);
+		if (_tag_item == undefined) return;
+		let tag_item_map = new Map(Object.entries(_tag_item));
+		let body = popup.createDiv("colorful-tag-popup-body");
 		let tagDetail = new Map(Object.entries(this.settings.tagDetail));
 		let _file = tagDetail.get(filename);
 		if (_file == undefined) {
-			body.addButton((b) => {
+			new Setting(body)
+				.setClass("colorful-tag-popup-body-btn")
+				.addButton((b) => {
 				b.setButtonText("Add");
 				b.onClick(async () => {
-					tagDetail.set(filename, Object.fromEntries(new Map([[`${tag}-${pos}`, Object.fromEntries(new Map<string, any>([["_i", i], ["_l", line], ["_c", col], ["test", "testtest"]]))]])));
+					let item = new Map<string, any>([["_i", i], ["_l", line], ["_c", col]]);
+					for (let [k, v] of tag_item_map.entries()) {
+						item.set(v as string, "");
+					}
+					tagDetail.set(filename, Object.fromEntries(new Map([[`${tag}-${pos}`, Object.fromEntries(item)]])));
 					this.settings.tagDetail = Object.fromEntries(tagDetail);
 					this.saveSettings();
 					await this.saveData(this.settings);
-					body.clear();
+					// delete btn
+					let btn = document.querySelectorAll(".colorful-tag-popup-body-btn");
+					btn.forEach((b) => { b.remove() });
 					await this.refreshPopupBody(body, tag, filename, pos);
 				});
 			})
@@ -130,16 +159,24 @@ export default class ColorfulTag extends Plugin {
 			let _tag = new Map<string, any>(Object.entries(_file));
 			let _items = _tag.get(`${tag}-${pos}`);
 			if (_items == undefined) {
-				body.addButton((b) => {
-					b.setButtonText("Add");
-					b.onClick(async () => {
-						_tag.set(`${tag}-${pos}`, Object.fromEntries(new Map<string, any>([["_i", i], ["_l", line], ["_c", col], ["test", "testtest"]])));
-						tagDetail.set(filename, Object.fromEntries(_tag));
-						this.settings.tagDetail = Object.fromEntries(tagDetail);
-						await this.saveData(this.settings);
-						body.clear();
-						await this.refreshPopupBody(body, tag, filename, pos);
-					});
+				new Setting(body)
+					.setClass("colorful-tag-popup-body-btn")
+					.addButton((b) => {
+						b.setButtonText("Add");
+						b.onClick(async () => {
+							let item = new Map<string, any>([["_i", i], ["_l", line], ["_c", col]]);
+							for (let [k, v] of tag_item_map.entries()) {
+								item.set(v as string, "");
+							}
+							_tag.set(`${tag}-${pos}`, Object.fromEntries(item));
+							tagDetail.set(filename, Object.fromEntries(_tag));
+							this.settings.tagDetail = Object.fromEntries(tagDetail);
+							await this.saveData(this.settings);
+							// delete btn
+							let btn = document.querySelectorAll(".colorful-tag-popup-body-btn");
+							btn.forEach((b) => { b.remove() });
+							await this.refreshPopupBody(body, tag, filename, pos);
+						});
 				})
 			} else {
 				await this.refreshPopupBody(body, tag, filename, pos);
@@ -147,21 +184,26 @@ export default class ColorfulTag extends Plugin {
 		}
 		document.body.appendChild(popup);
 		this.registerDomEvent(popup, "mouseover", () => {
-			countdown = 9999;
+			this.mouseIn = true;
 		})
 		this.registerDomEvent(popup, "mouseout", () => {
 			if (!pin.classList.contains("pinned")) {
-				countdown = 3;
+				this.mouseIn = false;
+				countdown = 1;
 			}
 		});
 		// sleep 1s and decrease countdown, if countdown == 0, delete popup
 		let timer = setInterval(() => {
 			countdown--;
-			if (countdown == 0) {
+			if (countdown == 0 && !this.mouseIn) {
 				if (popup != null) {
 					popup.remove();
 				}
-				clearInterval(timer);
+				if (timer) {
+					clearInterval(timer);
+				}
+			} else if (countdown == 0 && this.mouseIn) {
+				countdown = 1;
 			}
 		}, 1000);
 		this.timer = timer;
@@ -205,29 +247,35 @@ export default class ColorfulTag extends Plugin {
 		if (suffix != "") {
 			css += `.colorful-tag-popup-header:after { content: "${suffix}"; }`;
 		}
-		css += `.colorful-tag-popup-body { padding: 5px 10px; border: 4px solid ${background_color}; border-radius: 0 0 10px 10px; border-top: none; background-color: #fff; }`;
+		css += `.colorful-tag-popup-body { padding: 0 10px; border: 4px solid ${background_color}; border-radius: 0 0 10px 10px; border-top: none; background-color: #fff; }`;
+		css += `.setting-item.colorful-tag-popup-item { padding: 5px 0 }`;
 		css += `#colorful-tag-popup input[type="text"] { border: none; }`;
 		css += `#colorful-tag-popup input[type="text"]:focus { border: inherit; }`;
 		el.setText(css);
 	}
 
-	async refreshPopupBody(body: Setting, tag: string, filename: string, pos: string) {
+	async refreshPopupBody(body: HTMLDivElement, tag: string, filename: string, pos: string) {
 		let tagDetail = new Map(Object.entries(this.settings.tagDetail));
 		let tags = new Map<string, any>(Object.entries(tagDetail.get(filename)));
 		let items = new Map(Object.entries(tags.get(`${tag}-${pos}`)));
-		for (let [k, v] of items.entries()) {
-			if (k.charAt(0) == "_") continue;
-			let item = body.addText((t) => {
-				t.setValue(v as string);
-				t.onChange(async (value) => {
-					items.set(k, value);
-					tags.set(`${tag}-${pos}`, Object.fromEntries(items));
-					tagDetail.set(filename, Object.fromEntries(tags));
-					this.settings.tagDetail = Object.fromEntries(tagDetail);
-					await this.saveData(this.settings);
+		let _tag_item = new Map(Object.entries(this.settings.tagItem));
+		let tag_item = new Map<string, string>(Object.entries(_tag_item.get(tag)));
+		for (let [k, v] of tag_item.entries()) {
+			if (v.charAt(0) == "_") continue;
+			let item = new Setting(body)
+				.addText((t) => {
+					let item = items.get(v) as string;
+					t.setValue(item);
+					t.onChange(async (value) => {
+						items.set(v, value);
+						tags.set(`${tag}-${pos}`, Object.fromEntries(items));
+						tagDetail.set(filename, Object.fromEntries(tags));
+						this.settings.tagDetail = Object.fromEntries(tagDetail);
+						await this.saveData(this.settings);
+					});
 				});
-			});
-			item.setName(k);
+			item.setName(v);
+			item.setClass("colorful-tag-popup-item");
 		}
 	}
 
@@ -239,6 +287,7 @@ export default class ColorfulTag extends Plugin {
 		let tagDetail = new Map(Object.entries(this.settings.tagDetail));
 		let _file = tagDetail.get(file.path);
 		if (_file == undefined) { return };
+		let _tag_item = new Map(Object.entries(this.settings.tagItem));
 		let fileSize = data.length;
 		let _tags = new Map<string, any>(Object.entries(_file));
 		// console.log("=====start handle file change=====");
@@ -247,6 +296,13 @@ export default class ColorfulTag extends Plugin {
 			let _new = new Map<string, any>();
 			for (let [k, v] of _tags.entries()) {
 				if (k.charAt(0) != "#") { continue; }
+				let re = new RegExp(/^(#.*)-\d+$/, "g");
+				let m = re.exec(k);
+				if (m == null) { continue; }
+				let tag = m[1];
+				let __tag_item =_tag_item.get(tag);
+				if (__tag_item == undefined) { continue; }
+				if (new Map(Object.entries(__tag_item)).size == 0) { continue; };
 				let _ori = new Map(Object.entries(v));
 				let _i = _ori.get("_i") as number;
 				let cur = tags[_i];
@@ -259,12 +315,21 @@ export default class ColorfulTag extends Plugin {
 			this.removeListener();
 			let tags_dom = document.querySelectorAll(".cm-hashtag.cm-hashtag-end");
 			tags_dom.forEach((tag, i) => {
+				// get tag name
+				let tag_name = "#"+tag.getText();
+				let __tag_item = _tag_item.get(tag_name);
+				if (__tag_item == undefined) return;
+				if (new Map(Object.entries(__tag_item)).size == 0) return;
 				//get previous element
 				let prev = tag.previousElementSibling!;
 				let f = (e: Event) => { this.listener(e, i) };
+				let ff = (e: Event) => { this.mouseIn = false };
 				tag.addEventListener("mouseover", f);
 				prev.addEventListener("mouseover", f);
-				this.fs.set(i, f);
+				tag.addEventListener("mouseout", ff);
+				prev.addEventListener("mouseout", ff);
+				this.fs.push(f);
+				this.fs.push(ff);
 			});
 			let size_delta = fileSize - _tags.get("file_size");
 			// console.log("size offset: "+size_delta);
@@ -272,6 +337,9 @@ export default class ColorfulTag extends Plugin {
 			let temp = [];
 			for (let i = 0; i < tags.length; i++) {
 				let tag = tags[i];
+				let __tag_item =_tag_item.get(tag.tag);
+				if (__tag_item == undefined) { continue; }
+				if (new Map(Object.entries(__tag_item)).size == 0) { continue; };
 				let start = tag.position.start;
 				// tag: new info from cache
 				// _tags: old info from prev settings
@@ -329,25 +397,30 @@ export default class ColorfulTag extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	listener(e: Event, i: number) {
+	clearPopup() {
 		let popup = document.querySelector("#colorful-tag-popup");
 		if (popup != null) {
 			clearInterval(this.timer);
 			popup.remove();
 		}
+	}
+
+	listener(e: Event, i: number) {
+		this.clearPopup();
+		this.mouseIn = true;
 		this.addPopup(e as MouseEvent, i);
 	}
 
 	removeListener() {
 		let tags_dom = document.querySelectorAll(".cm-hashtag.cm-hashtag-end");
 		tags_dom.forEach((tag, i) => {
-			for (let [i, f] of this.fs.entries()) {
+			for (let f of this.fs) {
 				let prev = tag.previousElementSibling!;
 				tag.removeEventListener("mouseover", f);
 				prev.removeEventListener("mouseover", f);
 			}
 		});
-		this.fs.clear();
+		this.fs = [];
 	}
 
 	async refresh() {
@@ -490,6 +563,56 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 		content.setText(tag);
 	}
 
+	refreshTagItems(item_setting: HTMLDivElement, tag_name: string){
+		// delete colorful-tag-setting-item
+		let del = item_setting.querySelectorAll(".colorful-tag-setting-item");
+		del.forEach((e) => { e.remove() });
+		let thisSetting = this.plugin.settings;
+		let tagItem = new Map(Object.entries(thisSetting.tagItem));
+		let _this_tag_item = tagItem.get(tag_name);
+		let this_tag_item = new Map();
+		if (_this_tag_item) {
+			this_tag_item = new Map(Object.entries(_this_tag_item));
+		}
+		for (let [key, value] of this_tag_item.entries()) {
+			new Setting(item_setting)
+				.setName("key")
+				.addText(text => text
+					.setValue(value)
+					.onChange(async (value) => {
+						this_tag_item.set(key, value);
+						tagItem.set(tag_name, Object.fromEntries(this_tag_item));
+						thisSetting.tagItem = Object.fromEntries(tagItem);
+						this.plugin.saveSettings();
+					}))
+				.addDropdown(dropdown => dropdown
+					.setValue("TEXT")
+					.addOption("TEXT", "Text")
+					// .onChange(async (value) => {
+					// 	this_tag_item.set(key, value);
+					// 	tagItem.set(tag_name, Object.fromEntries(this_tag_item));
+					// 	thisSetting.tagItem = Object.fromEntries(tagItem);
+					// 	this.plugin.saveSettings();
+					// }))
+				)
+				.setClass("colorful-tag-setting-item")
+		}
+		// add button
+		new Setting(item_setting)
+			.addButton(button => button
+				.setButtonText("Add item")
+				.onClick(async () => {
+					let key = "#" + randomUUID().substring(0, 6);
+					this_tag_item.set(key, "");
+					tagItem.set(tag_name, Object.fromEntries(this_tag_item));
+					thisSetting.tagItem = Object.fromEntries(tagItem);
+					this.plugin.saveSettings();
+					this.refreshTagItems(item_setting, tag_name);
+				}
+			))
+			.setClass("colorful-tag-setting-item")
+	}
+
 	asetting(i: number, add: boolean = false) {
 		const { containerEl } = this;
 		let thisSetting = this.plugin.settings;
@@ -568,14 +691,9 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 		setIcon(ctl_override, "right-triangle");
 		override_title.createSpan().setText("Override global settings");
 		ctl_override.onClickEvent(() => {
-			if (ctl_override.className == "colorful-tag-collapse-indicator is-collapsed") {
-				override.className = "setting-item colorful-tag-rule";
-				ctl_override.className = "colorful-tag-collapse-indicator"
-			} else {
-				override.className = "setting-item colorful-tag-rule is-collapsed";
-				ctl_override.className = "colorful-tag-collapse-indicator is-collapsed"
-			}
-		})
+			ctl_override.classList.toggle("is-collapsed");
+			override.classList.toggle("is-collapsed");
+		});
 		new Setting(normal)
 			.setName("tag")
 			.addText(text => text
@@ -620,6 +738,18 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 				override_text.setPlaceholder(global.get(attr_alt));
 			}
 		}
+		let tag_item = inner.createDiv("setting-item colorful-tag-rule is-collapsed");
+		let tag_item_inner = tag_item.createDiv("cm-s-obsidian");
+		tag_item_inner.setAttribute("style", "flex: 1;")
+		let tag_item_title = tag_item_inner.createDiv();
+		let ctl_tag_item = tag_item_title.createEl("span", "colorful-tag-collapse-indicator is-collapsed");
+		setIcon(ctl_tag_item, "right-triangle");
+		tag_item_title.createSpan().setText("Tag item");
+		ctl_tag_item.onClickEvent(() => {
+			ctl_tag_item.classList.toggle("is-collapsed");
+			tag_item.classList.toggle("is-collapsed");
+		});
+		this.refreshTagItems(tag_item_inner, "#"+tag_name);
 		new Setting(inner)
 			.addButton(btn => btn
 				.setButtonText("Remove")
