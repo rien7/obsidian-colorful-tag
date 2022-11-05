@@ -10,6 +10,7 @@ interface ColorfulTagSetting {
 	defaultStyle: Map<string, any>;
 	defaultGlobal: Map<string, boolean>;
 	styleList: Array<Object>;
+	useTagDetail: boolean;
 	// {filename:{file_size:0,tag_num:0,#tag-offset:{_i:idx,_l:line,_c:col,item:any,...}},...}
 	tagDetail: Object;
 	tagItem: Object;
@@ -23,6 +24,7 @@ const DEFAULT_SETTINGS: ColorfulTagSetting = {
 	defaultStyle: new Map<string, any>([['radius', '4px'], ['prefix', ''], ['suffix', ''], ['background-color', '#fff'], ['text-color', '#000'], ['text-size', '12px'], ['border', 'none'], ['font-weight', '900']]),
 	defaultGlobal: new Map<string, boolean>([['radius', false], ['prefix', false], ['suffix', false], ['background-color', false], ['text-color', false], ['text-size', false], ['border', true], ['font-weight', true]]),
 	styleList: new Array(),
+	useTagDetail: false,
 	tagDetail: new Map(),
 	tagItem: new Map(),
 }
@@ -61,6 +63,7 @@ export default class ColorfulTag extends Plugin {
 	}
 
 	async addListenerForTag() {
+		if (!this.settings.useTagDetail) { return; }
 		let _file = this.app.workspace.getActiveFile();
 		if (_file == null) return;
 		let file = _file!;
@@ -90,6 +93,7 @@ export default class ColorfulTag extends Plugin {
 	}
 
 	async addPopup(event: MouseEvent, i: number) {
+		if (!this.settings.useTagDetail) { return; }
 		// get mouse position
 		let countdown = 1;
 		let x = event.clientX;
@@ -231,6 +235,7 @@ export default class ColorfulTag extends Plugin {
 	}
 
 	addPopupCss(tag: string) {
+		if (!this.settings.useTagDetail) { return; }
 		let head = document.querySelector("head")!;
 		let del = head.querySelectorAll("[colorful-tag-plugin-popup]");
 		del.forEach((d) => { d.remove() });
@@ -276,6 +281,7 @@ export default class ColorfulTag extends Plugin {
 	}
 
 	async refreshPopupBody(body: HTMLDivElement, tag: string, filename: string, pos: string) {
+		if (!this.settings.useTagDetail) { return; }
 		let tagDetail = new Map(Object.entries(this.settings.tagDetail));
 		let tags = new Map<string, any>(Object.entries(tagDetail.get(filename)));
 		let items = new Map(Object.entries(tags.get(`${tag}-${pos}`)));
@@ -302,6 +308,7 @@ export default class ColorfulTag extends Plugin {
 	}
 
 	async handleFileChange(file: TFile, data: string, cache: CachedMetadata) {
+		if (!this.settings.useTagDetail) { return; }
 		// ignore tag delete
 		let tags = cache.tags;
 		if (tags == undefined) { return; }
@@ -501,10 +508,11 @@ export default class ColorfulTag extends Plugin {
 		css += `.colorful-tag-rule { margin-top: 15px; }`;
 		css += `.colorful-tag-collapse-indicator.is-collapsed > svg { transform: rotate(-90deg); }`;
 		css += `.colorful-tag-collapse-indicator > svg { height: 9px; width: 9px; margin-right: 8px; }`
-		css += `.colorful-tag-setting-title { font-weight: 900; font-style: normal; white-space: nowrap; color: #000000; padding-right: 6px; padding-left: 6px; border-radius: 4px; }`
-		css += `.colorful-tag-setting-title.cm-hashtag-begin { white-space: nowrap; padding-right: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }`
-		css += `.colorful-tag-setting-title.cm-hashtag-end { font-family: var(--font-text); padding-left: 0; border-bottom-left-radius: 0; border-top-left-radius: 0; }`
-		css += `.colorful-tag-setting-title.setting-title { line-height: 1.8em; font-size: 1.8em; width: 300px; height: 50px; margin: 0 auto; background-color: #ffdc5180; }`
+		css += `.tagItem-hidden { display: none; }`;
+		css += `.colorful-tag-setting-title { font-weight: 900; font-style: normal; white-space: nowrap; }`
+		css += `.colorful-tag-setting-title.cm-hashtag-begin { white-space: nowrap; padding-right: 0; }`
+		css += `.colorful-tag-setting-title.cm-hashtag-end { font-family: var(--font-text); padding-left: 0; }`
+		css += `.colorful-tag-setting-title.setting-title { line-height: 1.8em; font-size: 1.8em; width: 300px; height: 50px; margin: 0 auto; }`
 		css += `.colorful-tag-setting-title.setting-title::before { content: "🎨 "; }`
 
 		el.setText(css);
@@ -796,6 +804,17 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 			ctl_tag_item.classList.toggle("is-collapsed");
 			tag_item.classList.toggle("is-collapsed");
 		});
+		if (!thisSetting.useTagDetail) {
+			tag_item.addClass("tagItem-hidden");
+			tag_item_inner.addClass("tagItem-hidden");
+			tag_item_title.addClass("tagItem-hidden");
+			ctl_tag_item.addClass("tagItem-hidden");
+		} else {
+			tag_item.addClass("tagItem");
+			tag_item_inner.addClass("tagItem");
+			tag_item_title.addClass("tagItem");
+			ctl_tag_item.addClass("tagItem");
+		}
 		this.refreshTagItems(tag_item_inner, "#"+tag_name);
 		new Setting(inner)
 			.addButton(btn => btn
@@ -825,6 +844,41 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 		let styles = thisSetting.styleList;
 		let btn = containerEl.createEl('button', { text: "Add" });
 
+		let general = containerEl.createDiv("colorful-tag-rule is-collapsed");
+		let general_inner = general.createDiv("cm-s-obsidian");
+		general_inner.setAttribute("style", "flex: 1;")
+		let general_title = general_inner.createDiv();
+		let ctl_general = general_title.createEl("span", "colorful-tag-collapse-indicator is-collapsed");
+		setIcon(ctl_general, "right-triangle");
+		general_title.createSpan().setText("General");
+		ctl_general.onClickEvent(() => {
+			ctl_general.classList.toggle("is-collapsed");
+			general.classList.toggle("is-collapsed");
+		});
+		new Setting(general_inner)
+			.setName("Enable Tag Detail (beta)")
+			.addToggle(toggle => toggle
+				.setValue(thisSetting.useTagDetail)
+				.onChange(async (value) => {
+					thisSetting.useTagDetail = value;
+					this.plugin.saveSettings();
+					if (value) {
+						this.plugin.addListenerForTag();
+						let hidden = document.querySelectorAll(".tagItem-hidden");
+						hidden.forEach((e) => {
+							e.classList.remove("tagItem-hidden");
+							e.classList.add("tagItem");
+						})
+					} else {
+						this.plugin.removeListener();
+						let hidden = document.querySelectorAll(".tagItem");
+						hidden.forEach((e) => {
+							e.classList.remove("tagItem");
+							e.classList.add("tagItem-hidden");
+						})
+					}
+				}))
+		
 		// global setting
 		let globalDiv = containerEl.createDiv("colorful-tag-rule is-collapsed");
 		let globalInner = globalDiv.createDiv("cm-s-obsidian");
