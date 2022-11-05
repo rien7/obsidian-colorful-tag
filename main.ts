@@ -757,7 +757,10 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 					m.set("tag", value);
 					thisSetting.styleList[i] = Object.fromEntries(m);
 					this.refreshHeader(hashtag, content, m.get("tag"));
-
+					let tagItem = new Map(Object.entries(thisSetting.tagItem));
+					tagItem.set(value, tagItem.get(tag_name)!);
+					tagItem.delete(tag_name);
+					thisSetting.tagItem = Object.fromEntries(tagItem);
 					this.plugin.saveSettings();
 				}))
 			.setDesc("Enter a tag (without #)")
@@ -942,5 +945,28 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 		for (let k = 0; k < styles.length; k++) {
 			this.asetting(k);
 		}
+
+		let support = containerEl.createDiv("colorful-tag-rule is-collapsed");
+		let support_inner = support.createDiv("cm-s-obsidian");
+		let support_title = support_inner.createDiv();
+		let ctl_support = support_title.createEl("span", "colorful-tag-collapse-indicator is-collapsed");
+		setIcon(ctl_support, "right-triangle");
+		support_title.createSpan().setText("Support Me!");
+		ctl_support.onClickEvent(() => {
+			ctl_support.classList.toggle("is-collapsed");
+			support.classList.toggle("is-collapsed");
+		});
+		let support_text = support_inner.createDiv("colorful-tag-rule");
+		support_text.createSpan().setText("Your support will be my motivation to improve Colorful Tag.");
+		support_text.createSpan().setText(" If you like this plugin, please consider to buy me a coffee. Thank you!")
+		let link = support_inner.createEl("a", "colorful-tag-rule");
+		link.setAttr("href", "https://ko-fi.com/V7V2G2MOF");
+		link.setAttr("target", "_blank");
+		let img = link.createEl("img");
+		img.setAttr("height", "48");
+		img.setAttr("style", "border:0px;height:48px;display:block;margin:10px auto;");
+		img.setAttr("src", "https://storage.ko-fi.com/cdn/kofi2.png?v=3");
+		img.setAttr("border", "0");
+		img.setAttr("alt", "Buy Me a Coffee at ko-fi.com");
 	}
 }
