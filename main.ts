@@ -273,7 +273,7 @@ export default class ColorfulTag extends Plugin {
 		if (suffix != "") {
 			css += `.colorful-tag-popup-header:after { content: "${suffix}"; }`;
 		}
-		css += `.colorful-tag-popup-body { padding: 0 10px; border: 4px solid ${background_color}; border-radius: 0 0 10px 10px; border-top: none; background-color: #fff; }`;
+		css += `.colorful-tag-popup-body { padding: 0 10px; border: 4px solid ${background_color}; border-radius: 0 0 10px 10px; border-top: none;}`;
 		css += `.setting-item.colorful-tag-popup-item { padding: 5px 0 }`;
 		css += `#colorful-tag-popup input[type="text"] { border: none; }`;
 		css += `#colorful-tag-popup input[type="text"]:focus { border: inherit; }`;
