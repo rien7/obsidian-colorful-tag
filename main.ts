@@ -20,9 +20,9 @@ const DEFAULT_SETTINGS: ColorfulTagSetting = {
 	firstTime: true,
 	global_enable: new Map(),
 	global: new Map(),
-	attrList: ["radius", "prefix", "suffix", "background color", "text color", "text size", "border", "font weight"],
-	defaultStyle: new Map<string, any>([['radius', '4px'], ['prefix', ''], ['suffix', ''], ['background-color', '#fff'], ['text-color', '#000'], ['text-size', '12px'], ['border', 'none'], ['font-weight', '900']]),
-	defaultGlobal: new Map<string, boolean>([['radius', false], ['prefix', false], ['suffix', false], ['background-color', false], ['text-color', false], ['text-size', false], ['border', true], ['font-weight', true]]),
+	attrList: ["nest tag", "radius", "prefix", "suffix", "background color", "text color", "text size", "border", "font weight"],
+	defaultStyle: new Map<string, any>([['nest-tag', "false"], ['radius', '4px'], ['prefix', ''], ['suffix', ''], ['background-color', '#fff'], ['text-color', '#000'], ['text-size', '12px'], ['border', 'none'], ['font-weight', '900']]),
+	defaultGlobal: new Map<string, boolean>([['nest-tag', false], ['radius', false], ['prefix', false], ['suffix', false], ['background-color', false], ['text-color', false], ['text-size', false], ['border', true], ['font-weight', true]]),
 	styleList: new Array(),
 	useTagDetail: false,
 	tagDetail: new Map(),
@@ -480,6 +480,7 @@ export default class ColorfulTag extends Plugin {
 			let text_size = m.get("text-size") || global.get("text-size") || "";
 			let border = m.get("border") || global.get("border") || "";
 			let font_weight = m.get("font-weight") || global.get("font-weight") || "";
+			let nest_tag = m.get("nest-tag") as string || global.get("nest-tag") as string || "";
 			let padding_size = "";
 
 			// reading view: body a.tag[href="#${tag}"] => font-weight, background-color, text-color, text-size, [radius, prefix, suffix, padding], white-space, border
@@ -487,18 +488,24 @@ export default class ColorfulTag extends Plugin {
 			//                                .cm-hashtag-begin => prefix, radius, padding
 			//						          .cm-hashtag-end => suffix, radius, padding
 			// reading view && edit view
-			css += `body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag_lp} { font-weight: ${font_weight}; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; white-space: nowrap; border: ${border}; }`;
+			let reading_selector = `href="#${tag}"`;
+			let editing_selector = `span.cm-tag-${tag_lp}`;
+			if (nest_tag.toLowerCase() == "true") {
+				reading_selector = `href^="#${tag}"`;
+				editing_selector = `span[class*="cm-tag-${tag_lp}"]`;
+			}
+			css += `body a.tag[${reading_selector}], body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag { font-weight: ${font_weight}; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; white-space: nowrap; border: ${border}; }`;
 			// only reading view
-			css += `body a.tag[href="#${tag}"] { border-radius: ${radius}; padding-left: ${padding_size}; padding-right: ${padding_size}; }`;
+			css += `body a.tag[${reading_selector}] { border-radius: ${radius}; padding-left: ${padding_size}; padding-right: ${padding_size}; }`;
 			// edit view begin
-			css += `body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag_lp}.cm-hashtag-begin { border-top-right-radius: 0; border-bottom-right-radius: 0; padding-right: 0px; border-top-left-radius: ${radius}; border-bottom-left-radius: ${radius}; padding-left: ${padding_size}; }`;
+			css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin { border-top-right-radius: 0; border-bottom-right-radius: 0; padding-right: 0px; border-top-left-radius: ${radius}; border-bottom-left-radius: ${radius}; padding-left: ${padding_size}; }`;
 			// edit view end
-			css += `body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag_lp}.cm-hashtag-end { border-bottom-left-radius: 0; border-top-left-radius: 0; padding-left: 0px; border-top-right-radius: ${radius}; border-bottom-right-radius: ${radius}; padding-right: ${padding_size}; }`;
+			css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end { border-bottom-left-radius: 0; border-top-left-radius: 0; padding-left: 0px; border-top-right-radius: ${radius}; border-bottom-right-radius: ${radius}; padding-right: ${padding_size}; }`;
 			if (prefix != "") {
-				css += `:is(body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag_lp}.cm-hashtag-begin)::before { content: "${prefix} "; }`;
+				css += `:is(body a.tag[${reading_selector}], body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin)::before { content: "${prefix} "; }`;
 			}
 			if (suffix != "") {
-				css += `:is(body a.tag[href="#${tag}"], body .cm-s-obsidian .cm-line span.cm-hashtag.cm-tag-${tag_lp}.cm-hashtag-end)::after { content: " ${suffix}"; }`;
+				css += `:is(body a.tag[${reading_selector}], body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end)::after { content: " ${suffix}"; }`;
 			}
 		}
 		// plugin setting
