@@ -524,12 +524,14 @@ export default class ColorfulTag extends Plugin {
 			}
 
 			if (prefix != "") {
-				css += `body a.tag[${reading_selector}], body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin::before { content: "${prefix} "; ${style1}; }`;
+				css += `body a.tag[${reading_selector}]::before { content: "${prefix} "; }`;
+				css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin::before { content: "${prefix} "; ${style1} }`;
 				css += `body a.tag[${reading_selector}]::before { ${style2}; }`;
 				css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin::before { ${style3}; padding-top: var(--tag-padding-y); padding-bottom: var(--tag-padding-y); padding-left: var(--tag-padding-x); }`;
 			}
 			if (suffix != "") {
-				css += `body a.tag[${reading_selector}], body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end::after { content: " ${suffix}"; ${style1}; }`;
+				css += `body a.tag[${reading_selector}]::after { content: " ${suffix}"; }`;
+				css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end::after { content: " ${suffix}"; ${style1} }`;
 				css += `body a.tag[${reading_selector}]::after { ${style2}; }`;
 				css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end::after { ${style4}; padding-top: var(--tag-padding-y); padding-bottom: var(--tag-padding-y); padding-right: var(--tag-padding-x); }`;
 			}
