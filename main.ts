@@ -20,9 +20,9 @@ const DEFAULT_SETTINGS: ColorfulTagSetting = {
 	firstTime: true,
 	global_enable: new Map(),
 	global: new Map(),
-	attrList: ["nest tag", "radius", "prefix", "suffix", "background color", "text color", "text size", "border", "font weight"],
-	defaultStyle: new Map<string, any>([['nest-tag', "false"], ['radius', '4px'], ['prefix', ''], ['suffix', ''], ['background-color', '#fff'], ['text-color', '#000'], ['text-size', '12px'], ['border', 'none'], ['font-weight', '900']]),
-	defaultGlobal: new Map<string, boolean>([['nest-tag', false], ['radius', false], ['prefix', false], ['suffix', false], ['background-color', false], ['text-color', false], ['text-size', false], ['border', true], ['font-weight', true]]),
+	attrList: ["nest tag", "remove hash", "remove tag name", "radius", "prefix", "suffix", "background color", "text color", "text size", "border", "font weight"],
+	defaultStyle: new Map<string, any>([['nest-tag', "false"], ['remove-hash', "false"], ['remove-tag-name', "false"], ['radius', '4px'], ['prefix', ''], ['suffix', ''], ['background-color', '#fff'], ['text-color', '#000'], ['text-size', '12px'], ['border', 'none'], ['font-weight', '900']]),
+	defaultGlobal: new Map<string, boolean>([['nest-tag', false], ['remove-hash', false], ['remove-tag-name', false], ['radius', false], ['prefix', false], ['suffix', false], ['background-color', false], ['text-color', false], ['text-size', false], ['border', true], ['font-weight', true]]),
 	styleList: new Array(),
 	useTagDetail: false,
 	tagDetail: new Map(),
@@ -481,6 +481,8 @@ export default class ColorfulTag extends Plugin {
 			let border = m.get("border") || global.get("border") || "";
 			let font_weight = m.get("font-weight") || global.get("font-weight") || "";
 			let nest_tag = m.get("nest-tag") as string || global.get("nest-tag") as string || "";
+			let remove_hash = m.get("remove-hash") as string || global.get("remove-hash") as string || "";
+			let remove_tag_name = m.get("remove-tag-name") as string || global.get("remove-tag-name") as string || "";
 			let padding_size = "";
 
 			// reading view: body a.tag[href="#${tag}"] => font-weight, background-color, text-color, text-size, [radius, prefix, suffix, padding], white-space, border
@@ -494,18 +496,42 @@ export default class ColorfulTag extends Plugin {
 				reading_selector = `href^="#${tag}"`;
 				editing_selector = `span[class*="cm-tag-${tag_lp}"]`;
 			}
-			css += `body a.tag[${reading_selector}], body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag { font-weight: ${font_weight}; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; white-space: nowrap; border: ${border}; }`;
+
+			let style1 = `font-weight: ${font_weight}; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; white-space: nowrap; border: ${border};`
+			let style2 = `border-radius: ${radius}; padding-left: ${padding_size}; padding-right: ${padding_size};`
+			let style3 = `border-top-right-radius: 0; border-bottom-right-radius: 0; padding-right: 0px; border-top-left-radius: ${radius}; border-bottom-left-radius: ${radius}; padding-left: ${padding_size};`
+			let style4 = `border-bottom-left-radius: 0; border-top-left-radius: 0; padding-left: 0px; border-top-right-radius: ${radius}; border-bottom-right-radius: ${radius}; padding-right: ${padding_size};`
+
+			css += `body a.tag[${reading_selector}], body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag { ${style1} }`;
 			// only reading view
-			css += `body a.tag[${reading_selector}] { border-radius: ${radius}; padding-left: ${padding_size}; padding-right: ${padding_size}; }`;
+			css += `body a.tag[${reading_selector}] { ${style2} }`;
 			// edit view begin
-			css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin { border-top-right-radius: 0; border-bottom-right-radius: 0; padding-right: 0px; border-top-left-radius: ${radius}; border-bottom-left-radius: ${radius}; padding-left: ${padding_size}; }`;
+			css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin { ${style3} }`;
 			// edit view end
-			css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end { border-bottom-left-radius: 0; border-top-left-radius: 0; padding-left: 0px; border-top-right-radius: ${radius}; border-bottom-right-radius: ${radius}; padding-right: ${padding_size}; }`;
+			css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end { ${style4} }`;
+
+			if (remove_hash.toLowerCase() == "true") {
+				css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin { font-size: 0px; }`;
+				if (remove_tag_name.toLowerCase() == "true" && suffix == "") {
+					css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin::before { padding-right: var(--tag-padding-x); border-top-right-radius: ${radius} !important; border-bottom-right-radius: ${radius} !important; }`;
+				}
+			}
+			if (remove_tag_name.toLowerCase() == "true") {
+				css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end { font-size: 0px; }`;
+				if (remove_hash.toLowerCase() == "true" && prefix == "") {
+					css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end::after { padding-left: var(--tag-padding-x); border-top-left-radius: ${radius} !important; border-bottom-left-radius: ${radius} !important; }`;
+				}
+			}
+
 			if (prefix != "") {
-				css += `:is(body a.tag[${reading_selector}], body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin)::before { content: "${prefix} "; }`;
+				css += `body a.tag[${reading_selector}], body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin::before { content: "${prefix} "; ${style1}; }`;
+				css += `body a.tag[${reading_selector}]::before { ${style2}; }`;
+				css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin::before { ${style3}; padding-top: var(--tag-padding-y); padding-bottom: var(--tag-padding-y); padding-left: var(--tag-padding-x); }`;
 			}
 			if (suffix != "") {
-				css += `:is(body a.tag[${reading_selector}], body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end)::after { content: " ${suffix}"; }`;
+				css += `body a.tag[${reading_selector}], body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end::after { content: " ${suffix}"; ${style1}; }`;
+				css += `body a.tag[${reading_selector}]::after { ${style2}; }`;
+				css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end::after { ${style4}; padding-top: var(--tag-padding-y); padding-bottom: var(--tag-padding-y); padding-right: var(--tag-padding-x); }`;
 			}
 		}
 		// plugin setting
