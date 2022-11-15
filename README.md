@@ -60,8 +60,6 @@ Setting list:
 
 ### Tag Detail(Beta)
 
-ATTENTION: It will lose data in some case (change tag's **column** and **line** at the same time). You can manually find the lost data in the `.obsidian/plugins/obsidian-colorful-tag/data.json` file.
-
 You can use tag detail to add more information to a tag.
 
 You need to **ENABLE** it in `General` setting. And then add keys in per tag setting. After that, hover the corresponding tag in editing mode to modify the detail.
