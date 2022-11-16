@@ -510,16 +510,23 @@ export default class ColorfulTag extends Plugin {
 			// edit view end
 			css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end { ${style4} }`;
 
-			if (remove_hash.toLowerCase() == "true") {
+			if (remove_hash.toLowerCase() == "true" && remove_tag_name.toLowerCase() == "true") {
 				css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin { font-size: 0px; }`;
-				if (remove_tag_name.toLowerCase() == "true" && suffix == "") {
-					css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin::before { padding-right: var(--tag-padding-x); border-top-right-radius: ${radius} !important; border-bottom-right-radius: ${radius} !important; }`;
-				}
-			}
-			if (remove_tag_name.toLowerCase() == "true") {
 				css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end { font-size: 0px; }`;
-				if (remove_hash.toLowerCase() == "true" && prefix == "") {
-					css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end::after { padding-left: var(--tag-padding-x); border-top-left-radius: ${radius} !important; border-bottom-left-radius: ${radius} !important; }`;
+				if (suffix == "" && prefix != "") {
+					css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin::before { padding-right: 0.65em !important; border-top-right-radius: ${radius} !important; border-bottom-right-radius: ${radius} !important; }`
+				} else if (prefix == "" && suffix != "") {
+					css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end::after { padding-left: 0.65em !important; border-top-left-radius: ${radius} !important; border-bottom-left-radius: ${radius} !important; }`
+				}
+			} else if (remove_hash.toLowerCase() == "true") {
+				css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin { font-size: 0px; }`;
+				if (prefix == "") {
+					css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end { padding-left: 0.65em; border-top-right-radius: ${radius} !important; border-bottom-right-radius: ${radius} !important; }`;
+				}
+			} else if (remove_tag_name.toLowerCase() == "true") {
+				css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end { font-size: 0px; }`;
+				if (suffix == "") {
+					css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin { padding-right: 0.65em; border-top-right-radius: ${radius} !important; border-bottom-right-radius: ${radius} !important; }`;
 				}
 			}
 
@@ -527,13 +534,17 @@ export default class ColorfulTag extends Plugin {
 				css += `body a.tag[${reading_selector}]::before { content: "${prefix} "; }`;
 				css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin::before { content: "${prefix} "; ${style1} }`;
 				css += `body a.tag[${reading_selector}]::before { ${style2}; }`;
-				css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin::before { ${style3}; padding-top: var(--tag-padding-y); padding-bottom: var(--tag-padding-y); padding-left: var(--tag-padding-x); }`;
+				if (remove_hash.toLowerCase() == "true") {
+					css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin::before { ${style3}; padding-top: 0.2em; padding-bottom: 0.2em; padding-left: 0.65em; }`;
+				}
 			}
 			if (suffix != "") {
 				css += `body a.tag[${reading_selector}]::after { content: " ${suffix}"; }`;
 				css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end::after { content: " ${suffix}"; ${style1} }`;
 				css += `body a.tag[${reading_selector}]::after { ${style2}; }`;
-				css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end::after { ${style4}; padding-top: var(--tag-padding-y); padding-bottom: var(--tag-padding-y); padding-right: var(--tag-padding-x); }`;
+				if (remove_tag_name.toLowerCase() == "true") {
+					css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end::after { ${style4}; padding-top: 0.2em; padding-bottom: 0.2em; padding-right: 0.65em; }`;
+				}
 			}
 		}
 		// plugin setting
