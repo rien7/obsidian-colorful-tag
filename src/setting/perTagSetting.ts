@@ -1,12 +1,16 @@
 import ColorfulTag from "main";
 import { Setting } from "obsidian";
-import { Attribute, TagSettingBase } from "./attribute";
-import { AttributeType, BooleanType, SizeType } from "./attributeType";
-import { convertTag } from "./utils";
+import { Attribute } from "../utils/attribute";
+import { AttributeType } from "../utils/attributeType";
+import { TagDetailSetting } from "./tagDetailSetting";
+import { convertTag } from "../utils/utils";
+import * as crypto from "crypto"
+import { BaseTagSetting } from "./baseTagSetting";
 
-export class TagSetting extends TagSettingBase {
+export class PerTagSetting extends BaseTagSetting {
     private name_: string | null;
-    private enable: boolean = true;
+    enable: boolean = true;
+    tagDetail: TagDetailSetting = new TagDetailSetting(-1);
 
     get name() {
         if (this.name_ == null) {
@@ -18,7 +22,7 @@ export class TagSetting extends TagSettingBase {
         this.name_ = name;
     }
 
-    private attrCss(name: string, plugin: ColorfulTag) {
+    attrCss(name: string, plugin: ColorfulTag) {
         let global = plugin.settings.GlobalTagSetting.attributes as Map<string, string | null>
         let local = this.attributes as Map<string, string | null>
         let value = local.get(name) || global.get(name) || ""
@@ -64,6 +68,16 @@ export class TagSetting extends TagSettingBase {
 
         let css = ""
         if (!this.enable) return css
+
+        let hash = crypto.createHash("sha256")
+        hash.update(this.name)
+        let tag_id = hash.digest("hex").substring(0, 6)
+
+        css += `.popup-${tag_id} > .colorful-tag-popup-header { display: flex; padding: 5px 10px; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; font-weight: ${font_weight}; border-radius: 10px 10px 0 0; }`;
+        css += `.popup-${tag_id} > .colorful-tag-popup-body { padding: 0 10px; border: 4px solid ${background_color}; border-radius: 0 0 10px 10px; border-top: none;}`;
+
+        css += `.shadow-text-${tag_id} { left: -6px; right: -6px; padding: 0 5px; border: 3px solid ${background_color}; border-radius: ${radius}; font-size: ${text_size}; position: relative; vertical-align: bottom; }`
+
         css += `body a.tag[${reading_selector}], body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag { ${style1} }`;
         // only reading view
         css += `body a.tag[${reading_selector}] { ${style2} }`;
@@ -94,6 +108,7 @@ export class TagSetting extends TagSettingBase {
 
         if (prefix != "") {
             css += `body a.tag[${reading_selector}]::before { content: "${prefix} "; }`;
+            css += `.popup-${tag_id} > .colorful-tag-popup-header:before { content: "${prefix}"; }`;
             css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin::before { content: "${prefix} "; ${style1} }`;
             css += `body a.tag[${reading_selector}]::before { ${style2}; }`;
             if (remove_hash.toLowerCase() == "true") {
@@ -102,6 +117,7 @@ export class TagSetting extends TagSettingBase {
         }
         if (suffix != "") {
             css += `body a.tag[${reading_selector}]::after { content: " ${suffix}"; }`;
+            css += `.popup-${tag_id} > .colorful-tag-popup-header:after { content: "${suffix}"; }`;
             css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end::after { content: " ${suffix}"; ${style1} }`;
             css += `body a.tag[${reading_selector}]::after { ${style2}; }`;
             if (remove_tag_name.toLowerCase() == "true") {
@@ -181,7 +197,7 @@ export class TagSetting extends TagSettingBase {
             settingItem.setName(attribute.displayName)
             if (attribute.description != null) settingItem.setDesc(attribute.description)
             // Value
-            this.addComponent(name, attribute, settingItem, () => {
+            this.addComponent(name, attribute.type, settingItem, () => {
                 plugin.settings.TagSettings[index] = this
                 plugin.saveSettings()
                 if (attribute.type == AttributeType.Boolean || attribute.type == AttributeType.Color) {
@@ -191,6 +207,13 @@ export class TagSetting extends TagSettingBase {
                 }
             })
         })
+
+        if (this.tagDetail == null) {
+            this.tagDetail = new TagDetailSetting(index)
+        }
+
+        this.tagDetail.tagIndex = index
+        this.tagDetail.generateDOM(body, plugin)
 
         new Setting(body).addButton((cp) => {
             cp.setIcon("trash")

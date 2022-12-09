@@ -28,5 +28,36 @@ export class css {
     .colorful-tag-setting-header.is-collapsed > .colorful-tag-setting-body {
         display: none;
     }
+    .colorful-tag-popup {
+        min-width: 250px;
+        min-height: 50px;
+        position: absolute;
+        transition-property: opacity;
+        transition-duration: 0.35s;
+        animation-name: fadeIn;
+        animation-duration: 0.3s;
+    }
+    .colorful-tag-popup.hidden {
+        opacity: 0;
+    }
+    .colorful-tag-popup-pin {
+        margin-left: auto;
+    }
+    .colorful-tag-popup-pin.pinned > svg {
+        transform: rotate(45deg);
+    }
+    .setting-item.colorful-tag-popup-item {
+        padding-top: 5px;
+        padding-bottom: 5px;
+    }
+    .colorful-tag-popup-body {
+        background-color: var(--background-primary);
+    }
+	.colorful-tag-popup input[type="text"] {
+        border: none;
+    }
+	.colorful-tag-popup input[type="text"]:focus {
+        border: inherit;
+    }
     `.replace(/[ \t\n]/g, "")
 }

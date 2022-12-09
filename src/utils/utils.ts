@@ -1,4 +1,4 @@
-import { Setting, setIcon } from "obsidian";
+import { AttributeType } from "./attributeType";
 
 export function insertCss(css: string) {
     let head = document.querySelector("head")!
@@ -15,3 +15,11 @@ export function convertTag(tag1: string): string[]{
     return [tag1, tag2]
 }
 
+export function stringToAttributeType(name: string): AttributeType | null {
+    for (let [s, t] of Object.entries(AttributeType)) {
+        if (name == s) {
+            return t
+        }
+    }
+    return null
+}
