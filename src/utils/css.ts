@@ -43,8 +43,16 @@ export class css {
     .colorful-tag-popup-pin {
         margin-left: auto;
     }
+    .colorful-tag-popup-header {
+        vertical-align: middle;
+        line-height: 24px;
+    }
+    .colorful-tag-popup-pin > svg {
+        vertical-align: middle;
+    }
     .colorful-tag-popup-pin.pinned > svg {
         transform: rotate(45deg);
+        fill: white;
     }
     .setting-item.colorful-tag-popup-item {
         padding-top: 5px;
@@ -59,5 +67,18 @@ export class css {
 	.colorful-tag-popup input[type="text"]:focus {
         border: inherit;
     }
-    `.replace(/[ \t\n]/g, "")
+    .colorful-tag-popup-body .setting-item-control > textarea {
+        border: none;
+        resize: vertical;
+    }
+    .colorful-tag-popup-body .setting-item-control > textarea.readonly {
+        resize: none;
+    }
+    .shadow-text-start {
+        right: -6px;
+    }
+    .shadow-text-end {
+        left: -6px;
+    }
+    `
 }

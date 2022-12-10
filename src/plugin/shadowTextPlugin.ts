@@ -5,7 +5,7 @@ import { Range } from "@codemirror/state"
 
 
 class ShadowTextWidget extends WidgetType {
-    constructor(readonly text: string, readonly tagName: string) { super() }
+    constructor(readonly text: string, readonly tagName: string, readonly start: boolean) { super() }
 
     eq(other: ShadowTextWidget) { return other.text == this.text }
 
@@ -16,6 +16,11 @@ class ShadowTextWidget extends WidgetType {
         wrap.setText(this.text)
         let tag_id = getHash(this.tagName).substring(0, 6)
         wrap.addClass(`shadow-text-${tag_id}`)
+        if (this.start) {
+            wrap.addClass("shadow-text-start")
+        } else {
+            wrap.addClass("shadow-text-end")
+        }
         return wrap
     }
 
@@ -29,11 +34,20 @@ function shadowText(view: EditorView) {
         syntaxTree(view.state).iterate({
             from, to,
             enter: (node) => {
-                if (node.name.startsWith("hashtag_hashtag-end_meta_tag-")) {
-                    let shadowText = FileTagDetail.shadowText[i] || ""
-                    if (shadowText != "") {
+                let shadowText = FileTagDetail.shadowText[i] || ""
+                if (node.name.startsWith("formatting_formatting-hashtag_hashtag_hashtag-begin_meta_tag-")) {
+                    if (shadowText && shadowText[0] != "") {
                         let deco = Decoration.widget({
-                            widget: new ShadowTextWidget(shadowText, node.name.substring(29)),
+                            widget: new ShadowTextWidget(shadowText[0], node.name.substring(61), true),
+                            side: 0
+                        })
+                        widgets.push(deco.range(node.from))
+                    }
+                }
+                if (node.name.startsWith("hashtag_hashtag-end_meta_tag-")) {
+                    if (shadowText && shadowText[1] != "") {
+                        let deco = Decoration.widget({
+                            widget: new ShadowTextWidget(shadowText[1], node.name.substring(29), false),
                             side: 1
                         })
                         widgets.push(deco.range(node.to))

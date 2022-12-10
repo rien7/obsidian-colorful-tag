@@ -73,7 +73,7 @@ export class PerTagSetting extends BaseTagSetting {
         css += `.popup-${tag_id} > .colorful-tag-popup-header { display: flex; padding: 5px 10px; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; font-weight: ${font_weight}; border-radius: 10px 10px 0 0; }`;
         css += `.popup-${tag_id} > .colorful-tag-popup-body { padding: 0 10px; border: 4px solid ${background_color}; border-radius: 0 0 10px 10px; border-top: none;}`;
 
-        css += `.shadow-text-${tag_id} { left: -6px; right: -6px; padding: 0 5px; border: 3px solid ${background_color}; border-radius: ${radius}; font-size: ${text_size}; position: relative; vertical-align: bottom; }`
+        css += `.shadow-text-${tag_id} { top: -1px; padding: 0 5px; border-bottom: 3px solid ${background_color}; font-size: ${text_size}; position: relative; vertical-align: bottom;  }`
 
         css += `body a.tag[${reading_selector}], body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag { ${style1} }`;
         // only reading view
@@ -126,6 +126,7 @@ export class PerTagSetting extends BaseTagSetting {
 
     private refreshHeader(name: string | null, nameEl: HTMLElement) {
         let [tag1, tag2] = convertTag(name || "")
+        if (nameEl.querySelectorAll(`.cm-tag-${tag2}`).length > 0) return
         let hashtag = nameEl.createSpan(`cm-hashtag cm-hashtag-begin cm-tag-${tag2}`)
         hashtag.setText("#")
         let content = nameEl.createSpan(`cm-hashtag cm-hashtag-end cm-tag-${tag2}`)
@@ -175,6 +176,7 @@ export class PerTagSetting extends BaseTagSetting {
                 // TODO: TypeCheck
                 let res: string | null = v;
                 if (v == "") res = null;
+                else res.replace(" ", "");
                 this.name_ = res;
                 // TODO: Refresh Title Tag
                 plugin.settings.TagSettings[index] = this

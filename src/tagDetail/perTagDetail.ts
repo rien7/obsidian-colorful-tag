@@ -47,7 +47,8 @@ export class perTagDetail {
         })
         let temps = template.split("{{TAG}}")
         if (temps.length != 2) return
-        FileTagDetail.shadowText[this.index] = temps[1]
+        let pair: [string, string] = [temps[0], temps[1]]
+        FileTagDetail.shadowText[this.index] = pair
     }
 
     popupBody(body: HTMLElement) {
@@ -120,6 +121,7 @@ export class perTagDetail {
                 case AttributeType.ReadOnly: {
                     setting.addTextArea((cp) => {
                         cp.setValue(dValue || "").setDisabled(true)
+                        .inputEl.addClass("readonly")
                     })
                     break
                 }

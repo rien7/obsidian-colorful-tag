@@ -21,10 +21,10 @@ export class GlobalTagSetting extends BaseTagSetting {
             settingItem.setName(attribute.displayName)
             if (attribute.description != null) settingItem.setDesc(attribute.description)
             // Value
-            this.addComponent(name, attribute.type, settingItem, () => {
+            this.addComponent(name, attribute.type, settingItem, async () => {
                 plugin.settings.GlobalTagSetting = this
                 plugin.saveSettings()
-                plugin.settingTab.display()
+                await plugin.refresh()
             })
             settingItem.addToggle((cp) => {
                 cp.setValue(enableList.get(name) || false)

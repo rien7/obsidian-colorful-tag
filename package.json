@@ -29,5 +29,8 @@
   "bugs": {
     "url": "https://github.com/rien7/obsidian-colorful-tag/issues"
   },
-  "homepage": "https://github.com/rien7/obsidian-colorful-tag#readme"
+  "homepage": "https://github.com/rien7/obsidian-colorful-tag#readme",
+  "dependencies": {
+    "@codemirror/language": "^6.3.1"
+  }
 }

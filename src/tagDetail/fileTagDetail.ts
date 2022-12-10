@@ -9,7 +9,7 @@ export class FileTagDetail {
     private content: string | null;
     private yaml: any | null;
 
-    static shadowText: Array<string> = new Array()
+    static shadowText: Array<[string, string]> = new Array()
 
     getTagData(i: number): Map<string, string | null> | null {
         if (this.kvss.length == 0) {
@@ -107,10 +107,9 @@ export class FileTagDetail {
                 if (tagsMeta[i] && tagsMeta[i] == `${tags[i].tag}-${s.line}-${s.col}-${s.offset}`)
                     continue
                 // insert new tag
-                console.log(`Add tag at ${i}, ${tags[i].tag}: ${s.line}-${s.col}-${s.offset}`)
                 tagsMeta.splice(i, 0, `${s.line}-${s.col}-${s.offset}`)
                 TagDetailUtils.fileTagDetail.kvss.splice(i, 0, null)
-                FileTagDetail.shadowText.splice(i, 0, "")
+                FileTagDetail.shadowText.splice(i, 0, ["", ""])
                 j--
                 if (j == 0) break
             }
@@ -126,8 +125,6 @@ export class FileTagDetail {
                         continue
                 }
                 // delete tag
-                console.log(`Delete tag at ${i}`)
-                console.log(TagDetailUtils.fileTagDetail.kvss)
                 tagsMeta.splice(k, 1)
                 TagDetailUtils.fileTagDetail.kvss.splice(k, 1)
                 FileTagDetail.shadowText.splice(k, 1)
