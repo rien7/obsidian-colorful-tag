@@ -1,13 +1,14 @@
+import { randomUUID } from "crypto";
 import ColorfulTag from "main";
 import { setIcon, Setting } from "obsidian";
+import { getHash } from "src/utils/utils";
 import { PerTagSetting } from "../setting/perTagSetting";
-import * as crypto from "crypto"
+
 import { AttributeType, BooleanType } from "../utils/attributeType";
 import { FileTagDetail } from "./fileTagDetail";
 
 enum popupState {
     VISIBLE,
-    PINNED,
     ENTER
 }
 
@@ -15,16 +16,19 @@ export class perTagDetail {
     plugin: ColorfulTag
     private id: string
     private timer: NodeJS.Timer | undefined
+    private timer1: NodeJS.Timer | undefined
     private tagSetting: PerTagSetting
     private state: popupState = popupState.ENTER
     private fileTagDetail: FileTagDetail;
     private index: number
+    private popuped: boolean
 
     constructor(plugin: ColorfulTag, tagSetting: PerTagSetting, fileTagDetail: FileTagDetail, i: number) {
         this.plugin = plugin
         this.tagSetting = tagSetting
         this.fileTagDetail = fileTagDetail
         this.index = i
+        this.popuped = false
         this.updateShadowText()
     }
 
@@ -55,8 +59,7 @@ export class perTagDetail {
             .addButton(async (cp) => {
                 cp.setButtonText("Add")
                 .onClick(async () => {
-                    storeData = new Map()
-                    this.fileTagDetail.setTagData(this.index, storeData)
+                    this.fileTagDetail.addTagData(this.index)
                     await this.fileTagDetail.writeFrontmatter()
                     body.childNodes.forEach((v) => v.remove())
                     this.popupBody(body)
@@ -136,10 +139,10 @@ export class perTagDetail {
     }
 
     popupHTML(tagDom: Element, other: Element) {
-        if (document.querySelector(`.popup-${this.id}`)) return
-        let hash = crypto.createHash("sha256")
-        hash.update(this.tagSetting.name)
-        this.id = hash.digest("hex").substring(0, 6)
+        // if (document.querySelector(`.popup-${this.id}`)) return        
+        if (this.popuped) return
+        this.popuped = true
+        this.id = getHash(this.tagSetting.name).substring(0, 6)
         let rect = tagDom.getBoundingClientRect()
         let popup = document.createElement("div")
         popup.addClass("colorful-tag-popup")
@@ -153,7 +156,7 @@ export class perTagDetail {
         pin.onClickEvent(() => {
             pin.classList.toggle("pinned")
             if (pin.classList.contains("pinned")) {
-                this.state = popupState.PINNED
+                this.state = popupState.ENTER
             } else {
                 this.state = popupState.VISIBLE
             }
@@ -169,16 +172,26 @@ export class perTagDetail {
             if (this.timer) {
                 clearTimeout(this.timer)
                 this.timer = undefined
-            }           
+            }
+            this.popuped = true
         }
         let leave = () => {
             this.state = popupState.VISIBLE
+            if (this.timer) {
+                clearTimeout(this.timer)
+                this.timer = undefined
+            }
             this.timer = setTimeout(() => {
                 if (this.state == popupState.VISIBLE && !pin.classList.contains("pinned")) {
                     if (popup != null) {
                         popup.addClass("hidden")
-                        setTimeout(() => {
+                        if (this.timer) {
+                            clearTimeout(this.timer1)
+                            this.timer1 = undefined
+                        }
+                        this.timer1 = setTimeout(() => {
                             popup.remove()
+                            this.popuped = false
                         }, 200)
                     }
                 }

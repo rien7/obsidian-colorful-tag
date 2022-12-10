@@ -3,8 +3,7 @@ import { Setting } from "obsidian";
 import { Attribute } from "../utils/attribute";
 import { AttributeType } from "../utils/attributeType";
 import { TagDetailSetting } from "./tagDetailSetting";
-import { convertTag } from "../utils/utils";
-import * as crypto from "crypto"
+import { convertTag, getHash } from "../utils/utils";
 import { BaseTagSetting } from "./baseTagSetting";
 
 export class PerTagSetting extends BaseTagSetting {
@@ -69,9 +68,7 @@ export class PerTagSetting extends BaseTagSetting {
         let css = ""
         if (!this.enable) return css
 
-        let hash = crypto.createHash("sha256")
-        hash.update(this.name)
-        let tag_id = hash.digest("hex").substring(0, 6)
+        let tag_id = getHash(this.name).substring(0, 6)
 
         css += `.popup-${tag_id} > .colorful-tag-popup-header { display: flex; padding: 5px 10px; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; font-weight: ${font_weight}; border-radius: 10px 10px 0 0; }`;
         css += `.popup-${tag_id} > .colorful-tag-popup-body { padding: 0 10px; border: 4px solid ${background_color}; border-radius: 0 0 10px 10px; border-top: none;}`;

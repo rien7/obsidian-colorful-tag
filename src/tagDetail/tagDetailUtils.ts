@@ -11,7 +11,7 @@ export class TagDetailUtils {
         if (!plugin.settings.UseTagDetail) return;
         
         // TODO: add listener for reading mode
-        let tags_dom = document.querySelectorAll(".cm-hashtag.cm-hashtag-end")
+        let tags_dom = document.querySelectorAll(".workspace-leaf.mod-active .cm-hashtag.cm-hashtag-end")
         if (tags_dom.length == 0) return
 
         let map: Map<string, PerTagSetting> = new Map()

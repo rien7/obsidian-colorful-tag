@@ -1,4 +1,5 @@
 import { AttributeType } from "./attributeType";
+import * as crypto from "crypto"
 
 export function insertCss(css: string) {
     let head = document.querySelector("head")!
@@ -22,4 +23,10 @@ export function stringToAttributeType(name: string): AttributeType | null {
         }
     }
     return null
+}
+
+export function getHash(str: string): string {
+    let hash = crypto.createHash("sha256")
+    hash.update(str)
+    return hash.digest("hex")
 }

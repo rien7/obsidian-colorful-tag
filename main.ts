@@ -99,7 +99,7 @@ export default class ColorfulTag extends Plugin {
 		this.settings.MetaFileTagDetails = ttmpMap;
 	}
 
-	async saveSettings() {
+	saveSettings() {
 		let tmp = []
 		let tagDetailAttr = []
 		let tagDetailType = []
@@ -153,20 +153,16 @@ export default class ColorfulTag extends Plugin {
 		// 	tmpMapObj[k] = v
 		// }
 
+		let ttmp = this.settings.MetaFileTagDetails
 		let ttmpMapObj = Object.create(null)
 		let ttmpMap = this.settings.MetaFileTagDetails as Map<string, string[]>
 		for (let [k, v] of ttmpMap) {
 			ttmpMapObj[k] = v
 		}
-
-		// this.settings.TagToID = tmpMapObj;
 		this.settings.MetaFileTagDetails = ttmpMapObj;
 
-		await this.saveData(this.settings);
+		this.saveData(this.settings);
 		
-		// this.settings.TagToID = tmpMap;
-		this.settings.MetaFileTagDetails = ttmpMap;
-
 		for (let i = 0; i < this.settings.TagSettings.length; i++) {
 			this.settings.TagSettings[i].attributes = tmp[i]
 			this.settings.TagSettings[i].tagDetail.attributes = tagDetailAttr[i]
@@ -174,6 +170,7 @@ export default class ColorfulTag extends Plugin {
 		}
 		this.settings.GlobalTagSetting.attributes = globalTmp
 		this.settings.GlobalTagSetting.enableList_ = globalBTmp
+		this.settings.MetaFileTagDetails = ttmp;
 	}
 }
 

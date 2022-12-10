@@ -2,7 +2,6 @@ import { EditorView, Decoration } from "@codemirror/view"
 import { syntaxTree } from "@codemirror/language"
 import { WidgetType } from "@codemirror/view"
 import { Range } from "@codemirror/state"
-import * as crypto from "crypto"
 
 
 class ShadowTextWidget extends WidgetType {
@@ -15,9 +14,7 @@ class ShadowTextWidget extends WidgetType {
         wrap.setAttribute("aria-hidden", "true")
         wrap.className = "colorful-tag-shadow-text"
         wrap.setText(this.text)
-        let hash = crypto.createHash("sha256")
-        hash.update(this.tagName)
-        let tag_id = hash.digest("hex").substring(0, 6)
+        let tag_id = getHash(this.tagName).substring(0, 6)
         wrap.addClass(`shadow-text-${tag_id}`)
         return wrap
     }
@@ -51,6 +48,7 @@ function shadowText(view: EditorView) {
 
 import { ViewUpdate, ViewPlugin, DecorationSet } from "@codemirror/view"
 import { FileTagDetail } from "src/tagDetail/fileTagDetail"
+import { getHash } from "src/utils/utils"
 
 export const shadowTextPlugin = ViewPlugin.fromClass(class {
     decorations: DecorationSet

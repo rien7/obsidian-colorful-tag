@@ -3,7 +3,7 @@ import { TFile, parseYaml, stringifyYaml, CachedMetadata } from "obsidian";
 import { TagDetailUtils } from "./tagDetailUtils";
 
 export class FileTagDetail {
-    kvss: Map<string, string | null>[] = []
+    kvss: (Map<string, string | null> | null)[] = []
     private plugin: ColorfulTag
     private file: TFile | null;
     private content: string | null;
@@ -20,6 +20,10 @@ export class FileTagDetail {
 
     setTagData(i: number, data: Map<string, string | null>) {
         this.kvss[i] = data
+    }
+
+    addTagData(i: number) {
+        this.kvss.splice(i, 0, new Map())
     }
 
     constructor(plugin: ColorfulTag) {
@@ -45,13 +49,11 @@ export class FileTagDetail {
 
     async writeFrontmatter() {
         this.map2yaml()
-        console.log(this.yaml)
         if (this.content?.match(/^---\s+([\w\W]+?)\s+---/)) {
             this.content = this.content.replace(/^---\s+([\w\W]+?)\s+---/, `---\n${stringifyYaml(this.yaml)}---`)
         } else {
             this.content = `---\n${stringifyYaml(this.yaml)}---\n${this.content}`
         }
-        console.log(this.content)
         await this.plugin.app.vault.modify(this.file!, this.content || "")
     }
 
@@ -79,20 +81,21 @@ export class FileTagDetail {
         let activeFile = plugin.app.workspace.getActiveFile()
         if (activeFile == null || file != activeFile) return
         let tags = cache.tags
-        if (tags == undefined) return
+        if (tags == undefined) tags = []
 
         TagDetailUtils.fileTagDetail = new FileTagDetail(plugin)
         await TagDetailUtils.fileTagDetail.getFrontmatter()
 
-        let metaFileTagDetail = plugin.settings.MetaFileTagDetails as Map<string, string[]>
+        let metaFileTagDetail = plugin.settings.MetaFileTagDetails! as Map<string, string[]>
         let tagsMeta = metaFileTagDetail.get(file.path) || []
+
         if (tagsMeta.length == tags.length) {
             let dirty = false
             tags.forEach((v, i) => {
                 let s = v.position.start
-                if (tagsMeta[i] != `${s.line}-${s.col}-${s.offset}`) {
+                if (tagsMeta[i] != `${v.tag}-${s.line}-${s.col}-${s.offset}`) {
                     dirty = true
-                    tagsMeta[i] =  `${s.line}-${s.col}-${s.offset}`
+                    tagsMeta[i] =  `${v.tag}-${s.line}-${s.col}-${s.offset}`
                 }
             })
             if (!dirty) return
@@ -101,12 +104,13 @@ export class FileTagDetail {
             for (let i = 0; i < tags.length; i++) {
                 let s = tags[i].position.start
                 // unchange part
-                if (tagsMeta[i] && tagsMeta[i] == `${s.line}-${s.col}-${s.offset}`)
+                if (tagsMeta[i] && tagsMeta[i] == `${tags[i].tag}-${s.line}-${s.col}-${s.offset}`)
                     continue
                 // insert new tag
-                console.log(i)
+                console.log(`Add tag at ${i}, ${tags[i].tag}: ${s.line}-${s.col}-${s.offset}`)
                 tagsMeta.splice(i, 0, `${s.line}-${s.col}-${s.offset}`)
-                TagDetailUtils.fileTagDetail.kvss.splice(i, 0, new Map())
+                TagDetailUtils.fileTagDetail.kvss.splice(i, 0, null)
+                FileTagDetail.shadowText.splice(i, 0, "")
                 j--
                 if (j == 0) break
             }
@@ -114,18 +118,20 @@ export class FileTagDetail {
             // await TagDetailUtils.hoverTagPopupListener(plugin)
         } else {
             let j = tagsMeta.length - tags.length
-            for (let i = 0; i < tagsMeta.length; i++) {
+            for (let i = 0, k = 0; i < tagsMeta.length; i++, k++) {
                 if (i < tags.length) {
-                    let s = tags[i].position.start
                     // unchange part
-                    if (tagsMeta[i] && tagsMeta[i] == `${s.line}-${s.col}-${s.offset}`)
+                    let s = tags[i].position.start
+                    if (tagsMeta[i] && tagsMeta[i] == `${tags[i].tag}-${s.line}-${s.col}-${s.offset}`)
                         continue
                 }
-                console.log(i)
                 // delete tag
-                tagsMeta.splice(i, 1)
-                TagDetailUtils.fileTagDetail.kvss.splice(i, 1)
-                FileTagDetail.shadowText.splice(i, 1)
+                console.log(`Delete tag at ${i}`)
+                console.log(TagDetailUtils.fileTagDetail.kvss)
+                tagsMeta.splice(k, 1)
+                TagDetailUtils.fileTagDetail.kvss.splice(k, 1)
+                FileTagDetail.shadowText.splice(k, 1)
+                k--
                 j--
                 if (j == 0) break
             }
