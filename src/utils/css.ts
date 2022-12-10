@@ -80,5 +80,8 @@ export class css {
     .shadow-text-end {
         left: -6px;
     }
+    .colorful-tag-handler > svg {
+        vertical-align: middle;
+    }
     `
 }

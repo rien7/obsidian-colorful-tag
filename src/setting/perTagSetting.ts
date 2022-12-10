@@ -1,10 +1,11 @@
 import ColorfulTag from "main";
-import { Setting } from "obsidian";
+import { setIcon, Setting } from "obsidian";
 import { Attribute } from "../utils/attribute";
 import { AttributeType } from "../utils/attributeType";
 import { TagDetailSetting } from "./tagDetailSetting";
-import { convertTag, getHash } from "../utils/utils";
+import { convertTag, getHash, isBefore } from "../utils/utils";
 import { BaseTagSetting } from "./baseTagSetting";
+import { GlobalTagSetting } from "./globalTagSetting";
 
 export class PerTagSetting extends BaseTagSetting {
     private name_: string | null;
@@ -135,8 +136,42 @@ export class PerTagSetting extends BaseTagSetting {
         old.forEach((o) => o.remove())
     }
 
+    drag(title: Setting, setting: HTMLElement, index: number, plugin: ColorfulTag) {
+        let dropHandle = title.controlEl.createEl("span")
+        dropHandle.addClass("colorful-tag-handler")
+        setIcon(dropHandle, "align-justify")
+        setting.setAttr("index", index)
+
+        dropHandle.draggable = true
+        dropHandle.ondragover = (e) => {
+            let to = e.target as HTMLElement
+            to = to.closest(".colorful-tag-setting-outer") as HTMLElement
+            if (GlobalTagSetting.from == null) return
+            if (to == GlobalTagSetting.from) return
+            if (isBefore(GlobalTagSetting.from, to))
+            to.parentNode?.insertBefore(GlobalTagSetting.from, to)
+            else
+            to.parentNode?.insertBefore(GlobalTagSetting.from, to.nextSibling)
+            let idx = GlobalTagSetting.from.getAttr("index")
+            GlobalTagSetting.from.setAttr("index", to.getAttr("index"))
+            to.setAttr("index", idx)
+            let tmpSetting = plugin.settings.TagSettings[parseInt(GlobalTagSetting.from.getAttr("index")!)]
+            plugin.settings.TagSettings[parseInt(GlobalTagSetting.from.getAttr("index")!)] = plugin.settings.TagSettings[parseInt(to.getAttr("index")!)]
+            plugin.settings.TagSettings[parseInt(to.getAttr("index")!)] = tmpSetting
+        }
+        dropHandle.ondragend = () => {
+            GlobalTagSetting.from = null
+            plugin.saveSettings()
+        }
+        dropHandle.ondragstart = (e) => {
+            let from = e.target as HTMLElement
+            from = from.closest(".colorful-tag-setting-outer") as HTMLElement
+            GlobalTagSetting.from = from
+        }
+    }
+
     generateDOM(parent: HTMLElement, plugin: ColorfulTag, index: number) {
-        let setting = parent.createDiv("colorful-tag-setting-header is-collapsed");
+        let setting = parent.createDiv("colorful-tag-setting-header is-collapsed colorful-tag-setting-outer");
         let inner = setting.createDiv("cm-s-obsidian")
         let header = inner.createDiv("cm-line")
         
@@ -164,6 +199,8 @@ export class PerTagSetting extends BaseTagSetting {
 
         let title_text = title.nameEl.createEl("span");
         this.refreshHeader(this.name_, title_text)
+
+        this.drag(title, setting, index, plugin)
 
         let attr = this.attributes as Map<string, string | null>
         let globalEnable = plugin.settings.GlobalTagSetting.enableList_ as Map<string, boolean>

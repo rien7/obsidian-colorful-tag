@@ -30,3 +30,14 @@ export function getHash(str: string): string {
     hash.update(str)
     return hash.digest("hex")
 }
+
+export function isBefore(el1: HTMLElement, el2: HTMLElement) {
+    if (el2.parentNode == el1.parentNode) {
+        for (let cur = el1.previousSibling; cur && cur.nodeType !== 9; cur = cur.previousSibling) {
+            if (cur == el2) {
+                return true;
+            }
+        }
+    }
+    return false;
+}

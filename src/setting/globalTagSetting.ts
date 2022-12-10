@@ -4,6 +4,7 @@ import { Attribute } from "src/utils/attribute";
 import { BaseTagSetting } from "./baseTagSetting";
 
 export class GlobalTagSetting extends BaseTagSetting {
+    static from: HTMLElement | null = null
     enableList_: Map<string, boolean> | Object = new Map();
     generateDOM(parent: HTMLElement, plugin: ColorfulTag) {
         let setting = parent.createDiv("colorful-tag-setting-header is-collapsed");
