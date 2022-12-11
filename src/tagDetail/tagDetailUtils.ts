@@ -23,7 +23,7 @@ export class TagDetailUtils {
         await TagDetailUtils.fileTagDetail.getFrontmatter()
 
         tags_dom.forEach((tagDom, i) => {
-            let tag = map.get(tagDom.getText())
+            let tag = map.get(tagDom.getText().split("/")[0])
             if (tag == undefined) return;
             if (!tag.enable) return;
             let detailAttr = tag.tagDetail.attributes as Map<string, string | null>

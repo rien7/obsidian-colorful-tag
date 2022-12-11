@@ -14,8 +14,7 @@ class ShadowTextWidget extends WidgetType {
         wrap.setAttribute("aria-hidden", "true")
         wrap.className = "colorful-tag-shadow-text"
         wrap.setText(this.text)
-        let tag_id = getHash(this.tagName).substring(0, 6)
-        wrap.addClass(`shadow-text-${tag_id}`)
+        wrap.addClass(`shadow-text-${this.tagName}`)
         if (this.start) {
             wrap.addClass("shadow-text-start")
         } else {

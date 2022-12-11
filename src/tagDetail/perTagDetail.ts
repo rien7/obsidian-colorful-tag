@@ -1,7 +1,5 @@
-import { randomUUID } from "crypto";
 import ColorfulTag from "main";
 import { setIcon, Setting } from "obsidian";
-import { getHash } from "src/utils/utils";
 import { PerTagSetting } from "../setting/perTagSetting";
 
 import { AttributeType, BooleanType } from "../utils/attributeType";
@@ -14,7 +12,6 @@ enum popupState {
 
 export class perTagDetail {
     plugin: ColorfulTag
-    private id: string
     private timer: NodeJS.Timer | undefined
     private timer1: NodeJS.Timer | undefined
     private tagSetting: PerTagSetting
@@ -144,11 +141,10 @@ export class perTagDetail {
         // if (document.querySelector(`.popup-${this.id}`)) return        
         if (this.popuped) return
         this.popuped = true
-        this.id = getHash(this.tagSetting.name).substring(0, 6)
         let rect = tagDom.getBoundingClientRect()
         let popup = document.createElement("div")
         popup.addClass("colorful-tag-popup")
-        popup.addClass(`popup-${this.id}`)
+        popup.addClass(`popup-${this.tagSetting.name}`)
         popup.style.left = `${rect.right + 20}px`
         popup.style.top = `${rect.bottom + 20}px`
         let header = popup.createDiv("colorful-tag-popup-header");

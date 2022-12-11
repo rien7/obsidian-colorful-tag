@@ -68,13 +68,10 @@ export class PerTagSetting extends BaseTagSetting {
 
         let css = ""
         if (!this.enable) return css
+        css += `[class*="popup-${tag2}"] > .colorful-tag-popup-header { display: flex; padding: 5px 10px; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; font-weight: ${font_weight}; border-radius: 10px 10px 0 0; }`;
+        css += `[class*="popup-${tag2}"] > .colorful-tag-popup-body { padding: 0 10px; border: 4px solid ${background_color}; border-radius: 0 0 10px 10px; border-top: none;}`;
 
-        let tag_id = getHash(this.name).substring(0, 6)
-
-        css += `.popup-${tag_id} > .colorful-tag-popup-header { display: flex; padding: 5px 10px; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; font-weight: ${font_weight}; border-radius: 10px 10px 0 0; }`;
-        css += `.popup-${tag_id} > .colorful-tag-popup-body { padding: 0 10px; border: 4px solid ${background_color}; border-radius: 0 0 10px 10px; border-top: none;}`;
-
-        css += `.shadow-text-${tag_id} { top: -1px; padding: 0 5px; border-bottom: 3px solid ${background_color}; font-size: ${text_size}; position: relative; vertical-align: bottom;  }`
+        css += `[class*="shadow-text-${tag2}"] { font-size: ${text_size}; vertical-align: bottom;  }`
 
         css += `body a.tag[${reading_selector}], body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag { ${style1} }`;
         // only reading view
@@ -106,7 +103,7 @@ export class PerTagSetting extends BaseTagSetting {
 
         if (prefix != "") {
             css += `body a.tag[${reading_selector}]::before { content: "${prefix} "; }`;
-            css += `.popup-${tag_id} > .colorful-tag-popup-header:before { content: "${prefix}"; }`;
+            css += `[class*="popup-${tag2}"] > .colorful-tag-popup-header:before { content: "${prefix}"; }`;
             css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin::before { content: "${prefix} "; ${style1} }`;
             css += `body a.tag[${reading_selector}]::before { ${style2}; }`;
             if (remove_hash.toLowerCase() == "true") {
@@ -115,7 +112,7 @@ export class PerTagSetting extends BaseTagSetting {
         }
         if (suffix != "") {
             css += `body a.tag[${reading_selector}]::after { content: " ${suffix}"; }`;
-            css += `.popup-${tag_id} > .colorful-tag-popup-header:after { content: "${suffix}"; }`;
+            css += `[class*="popup-${tag2}"] > .colorful-tag-popup-header:after { content: "${suffix}"; }`;
             css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end::after { content: " ${suffix}"; ${style1} }`;
             css += `body a.tag[${reading_selector}]::after { ${style2}; }`;
             if (remove_tag_name.toLowerCase() == "true") {
