@@ -33,6 +33,7 @@ export class TagDetailUtils {
             this.listener = () => { perTag.popupHTML(tagDom, prev) }
             tagDom.addEventListener("mouseenter", this.listener)
             prev.addEventListener("mouseenter", this.listener)
+            perTag.updateShadowText()
         })
     }
 

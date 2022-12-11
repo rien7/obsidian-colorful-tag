@@ -25,7 +25,7 @@ export class TagDetailSetting extends BaseTagSetting {
         this.tagIndex = tagIndex
     }
 
-    addComponent2(value: [string | null, AttributeType | null, string | null], name: string, settingItem: Setting, plugin: ColorfulTag) {
+    addComponent2(value: [string | null, AttributeType | null, string | null], name: string, settingItem: Setting, plugin: ColorfulTag, refresh: () => void) {
         let itemType = this.itemType as Map<string, [string | null, AttributeType | null, string | null]>
 
         let components = settingItem.controlEl.childNodes
@@ -51,14 +51,18 @@ export class TagDetailSetting extends BaseTagSetting {
 
                     let dropdownComponent = settingItem.components[3] as DropdownComponent
                     let deleted: ChildNode[] = []
-                    dropdownComponent.selectEl.childNodes.forEach((v) => deleted.push(v))
+                    let selectEl = dropdownComponent.selectEl
+                    if (!selectEl) {
+                        selectEl = settingItem.controlEl.childNodes[3] as HTMLSelectElement
+                    }
+                    selectEl.childNodes.forEach((v) => deleted.push(v))
                     deleted.forEach((v) => v.remove())
                     
                     let options = v.split(",")
                     options.forEach((v) => {
-                        dropdownComponent.addOption(v, v)
+                        selectEl.createEl("option", {value: v}).setText(v)
                     })
-                    dropdownComponent.setValue("")
+                    selectEl.createEl("option").setAttrs({selected: "", disabled: "", hidden: ""})
                 })
                 cp.inputEl.style.marginRight = "auto"
             })
@@ -78,7 +82,7 @@ export class TagDetailSetting extends BaseTagSetting {
                 itemType.delete(name)
                 plugin.settings.TagSettings[this.tagIndex].tagDetail = this
                 plugin.saveSettings()
-                plugin.settingTab.display()
+                refresh()
             })
         })
     }
@@ -110,7 +114,10 @@ export class TagDetailSetting extends BaseTagSetting {
             cp.setValue(value[1] || "")
             cp.onChange((v) => {
                 value[1] = stringToAttributeType(v)
-                this.addComponent2(value, k, settingItem, plugin)
+                this.addComponent2(value, k, settingItem, plugin, () => {
+                    settingItem.setClass("deleted")
+                    document.querySelectorAll(".deleted").forEach((v) => v.remove())
+                })
                 itemType.set(k, value)
                 this.itemType = itemType
                 plugin.settings.TagSettings[this.tagIndex].tagDetail = this
@@ -120,7 +127,10 @@ export class TagDetailSetting extends BaseTagSetting {
                 cp.selectEl.style.marginRight = "auto"
             }
         })
-        this.addComponent2(value, k, settingItem, plugin)
+        this.addComponent2(value, k, settingItem, plugin, () => {
+            settingItem.setClass("deleted")
+            document.querySelectorAll(".deleted").forEach((v) => v.remove())
+        })
     }
 
     generateDOM(parent: HTMLElement, plugin: ColorfulTag) {
@@ -138,7 +148,8 @@ export class TagDetailSetting extends BaseTagSetting {
             this.generateItem(tagItems, k, value, plugin)
         })
 
-        new Setting(tagItems).setName("Shadow Text Template")
+        let tagTemplate = body.createDiv()
+        new Setting(tagTemplate).setName("Shadow Text Template")
         .addTextArea((cp) => {
             cp.setValue(this.shadowTextTemplate)
             .onChange((v) => {

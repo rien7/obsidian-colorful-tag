@@ -61,7 +61,6 @@ function shadowText(view: EditorView) {
 
 import { ViewUpdate, ViewPlugin, DecorationSet } from "@codemirror/view"
 import { FileTagDetail } from "src/tagDetail/fileTagDetail"
-import { getHash } from "src/utils/utils"
 
 export const shadowTextPlugin = ViewPlugin.fromClass(class {
     decorations: DecorationSet
@@ -71,11 +70,13 @@ export const shadowTextPlugin = ViewPlugin.fromClass(class {
     }
 
     update(update: ViewUpdate) {
+        if (!(update.docChanged || update.focusChanged)) return
         this.decorations = shadowText(update.view)
     }
 }, {
     decorations: v => v.decorations,
 
     eventHandlers: {
+
     }
 })

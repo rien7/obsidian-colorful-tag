@@ -42,6 +42,7 @@ export default class ColorfulTag extends Plugin {
 			await FileTagDetail.handleMetadataChange(file, data, cache, this)
 		})
 		await this.refresh()
+		await TagDetailUtils.hoverTagPopupListener(this)
 		this.registerEditorExtension(shadowTextPlugin)
 	}
 
@@ -197,6 +198,7 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 
 		this.plugin.settings.GlobalTagSetting.generateDOM(containerEl, this.plugin)
 		this.plugin.settings.TagSettings.forEach((tag, i) => {
+			tag.opened = false
 			tag.generateDOM(containerEl, this.plugin, i)
 		})
 		this.plugin.refresh()
