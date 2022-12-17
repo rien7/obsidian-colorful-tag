@@ -5,13 +5,12 @@
 Make your tag more **beautiful** and **powerful**!
 ## Features
 
-- Add prefix or suffix to a tag
-- Change the text size or text color
-- Change the tag's radius size or tag’s background color
-- Global setting or per tag setting
+- Add many settings to style your tag
+- Global setting for all tags
 - Reorder tag setting by drag and drop
 - Tag detail for each tag
 - Add default value for tag detail
+- Add shadow text for each tag
 
 You can use `{{DATE}}` in tag detail default value, it will be replaced by current date.
 
@@ -20,6 +19,8 @@ All supported variables are:
 - `{{TIME}}`
 - `{{DATETIME}}`
 - `{{TAG}}`
+- `{{FILE}}`
+- `{{PATH}}`
 
 ## How To Install
 
@@ -46,23 +47,47 @@ You can use global setting to change the default setting for all tags.
 You can use per tag setting to change the setting for a specific tag.
 
 Setting list:
-- `prefix`: Add prefix to a tag
-- `suffix`: Add suffix to a tag
-- `radius`: Change the tag's radius size. Use vaild CSS value, like `5px`, `10%`, `1em`...
-- `background color`: Change the tag's background color. Use vaild CSS value, like `#fff`, `rgb(255, 255, 255)`, `hsl(0, 0%, 100%)`...
-- `text color`: Change the tag's text color. Use vaild CSS value, like `#fff`, `rgb(255, 255, 255)`, `hsl(0, 0%, 100%)`...
-- `text size`: Change the tag's text size. Use vaild CSS value, like `5px`, `10%`, `1em`...
-- `border`: Change the tag's border. Use vaild CSS value, like `1px solid #fff`, `1px solid rgb(255, 255, 255)`, `1px solid hsl(0, 0%, 100%)`...
-- `font weight`: Change the tag's font weight. Use vaild CSS value, like `bold`, `normal`, `500`, `800`...
-- `nest tag`: Apply the setting to the nested tag. For example, if you set `nest tag` to `true` and `text color` to `red`, the tag `#tag` and `#tag/nest-tag` will have red text color. **Use `true` or `false` to set this value**.
-- `remove hash`: Remove the hash symbol("#") in the tag. **Use `true` or `false` to set this value**. **Only support editing mode**.
-- `remove tag name`: Remove the tag name in the tag. **Use `true` or `false` to set this value**. **Only support editing mode**.
+- `prefix`
+- `suffix`
+- `radius`
+- `background color`
+- `text color`
+- `text size`
+- `border`: Change the tag's border. Use vaild CSS value, like `none`, `1px solid #fff`, `1px solid rgb(255, 255, 255)`, `1px solid hsl(0, 0%, 100%)`...
+- `font weight`: Change the tag's font weight.
+- `nest tag`: Apply the setting to the nested tag.
+- `remove hash`: Remove the hash symbol("#") in the tag.
+- `remove tag name`: Remove the tag name in the tag.
 
 ### Tag Detail(Beta)
 
 You can use tag detail to add more information to a tag.
 
 You need to **ENABLE** it in `General` setting. And then add keys in per tag setting. After that, hover the corresponding tag in editing mode to modify the detail.
+
+### Shadow Text(Beta)
+
+You can use shadow text to add shadow text to a tag.
+
+You need to set template in `Tag Detail Setting`. Attention: the template must contain `{{TAG}}`.
+
+For example, you have a tag `TODO` with this detail:
+
+```yaml
+colorful-tag:
+    - color: red
+      priority: ⭐⭐
+      text: colorful tag
+```
+
+ And you set `[{{priority}}] {{TAG}} {{text}}` as the template, and then the tag will be rendered as `[⭐⭐] #TODO colorful tag`.
+
+## Roadmap
+
+- add function to shadow text
+- new page to query tag & tag detail
+- link to another note/tag in tag detail
+- resize & move popup window
 
 ## Inspired By
 
