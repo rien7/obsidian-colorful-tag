@@ -75,10 +75,14 @@ export class css {
         resize: none;
     }
     .shadow-text-start {
-        right: -6px;
+        vertical-align: bottom;
+        font-size: var(--font-smaller);
+        color: var(--text-muted);
     }
     .shadow-text-end {
-        left: -6px;
+        vertical-align: bottom;
+        font-size: var(--font-smaller);
+        color: var(--text-muted);
     }
     .colorful-tag-handler > svg {
         vertical-align: middle;

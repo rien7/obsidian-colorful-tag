@@ -5,7 +5,7 @@ import { Range } from "@codemirror/state"
 
 
 class ShadowTextWidget extends WidgetType {
-    constructor(readonly text: string, readonly tagName: string, readonly start: boolean) { super() }
+    constructor(readonly text: string, readonly start: boolean) { super() }
 
     eq(other: ShadowTextWidget) { return other.text == this.text }
 
@@ -14,7 +14,6 @@ class ShadowTextWidget extends WidgetType {
         wrap.setAttribute("aria-hidden", "true")
         wrap.className = "colorful-tag-shadow-text"
         wrap.setText(this.text)
-        wrap.addClass(`shadow-text-${this.tagName}`)
         if (this.start) {
             wrap.addClass("shadow-text-start")
         } else {
@@ -34,19 +33,19 @@ function shadowText(view: EditorView) {
             from, to,
             enter: (node) => {
                 let shadowText = FileTagDetail.shadowText[i] || ""
-                if (node.name.startsWith("formatting_formatting-hashtag_hashtag_hashtag-begin_meta_tag-")) {
+                if (node.name.startsWith("formatting_formatting-hashtag_hashtag_hashtag-begin")) {
                     if (shadowText && shadowText[0] != "") {
                         let deco = Decoration.widget({
-                            widget: new ShadowTextWidget(shadowText[0], node.name.substring(61), true),
+                            widget: new ShadowTextWidget(shadowText[0], true),
                             side: 0
                         })
                         widgets.push(deco.range(node.from))
                     }
                 }
-                if (node.name.startsWith("hashtag_hashtag-end_meta_tag-")) {
+                if (node.name.startsWith("hashtag_hashtag-end")) {
                     if (shadowText && shadowText[1] != "") {
                         let deco = Decoration.widget({
-                            widget: new ShadowTextWidget(shadowText[1], node.name.substring(29), false),
+                            widget: new ShadowTextWidget(shadowText[1], false),
                             side: 1
                         })
                         widgets.push(deco.range(node.to))

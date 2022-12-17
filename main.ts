@@ -8,6 +8,7 @@ import { insertCss } from 'src/utils/utils';
 import { GlobalTagSetting } from 'src/setting/globalTagSetting';
 import { TagDetailUtils } from 'src/tagDetail/tagDetailUtils';
 import { FileTagDetail } from 'src/tagDetail/fileTagDetail';
+import { Convert } from 'src/utils/dataConvert';
 
 // Remember to rename these classes and interfaces!
 
@@ -18,7 +19,7 @@ interface ColorfulTagSettings {
 	MetaFileTagDetails: Map<string, string[]> | Object;
 }
 
-const DEFAULT_SETTINGS: ColorfulTagSettings = {
+export const DEFAULT_SETTINGS: ColorfulTagSettings = {
 	TagSettings: new Array<PerTagSetting>(),
 	GlobalTagSetting: new GlobalTagSetting(),
 	UseTagDetail: true,
@@ -30,7 +31,13 @@ export default class ColorfulTag extends Plugin {
 	settingTab: ColorfulTagSettingTab;
 
 	async onload() {
-		await this.loadSettings();
+		let convert = new Convert(this);
+		if (await convert.check()) {
+			await convert.backup();
+			await convert.convert();
+		} else {
+			await this.loadSettings();
+		}
 		let settingTab = new ColorfulTagSettingTab(this.app, this);
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.settingTab = settingTab
