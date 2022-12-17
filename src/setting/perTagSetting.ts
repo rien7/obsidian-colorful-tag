@@ -61,7 +61,7 @@ export class PerTagSetting extends BaseTagSetting {
             editing_selector = `span[class*="cm-tag-${tag2}"]`;
         }
 
-        let style1 = `font-weight: ${font_weight}; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; white-space: nowrap; border: ${border}; vertical-align: middle;`
+        let style1 = `font-weight: ${font_weight}; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; white-space: nowrap; border: ${border}; vertical-align: top;`
         let style2 = `border-radius: ${radius}; padding-left: ${padding_size}; padding-right: ${padding_size};`
         let style3 = `border-top-right-radius: 0; border-bottom-right-radius: 0; padding-right: 0px; border-top-left-radius: ${radius}; border-bottom-left-radius: ${radius}; padding-left: ${padding_size};`
         let style4 = `border-bottom-left-radius: 0; border-top-left-radius: 0; padding-left: 0px; border-top-right-radius: ${radius}; border-bottom-right-radius: ${radius}; padding-right: ${padding_size};`
