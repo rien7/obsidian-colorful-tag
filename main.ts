@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab } from 'obsidian';
+import { App, Plugin, PluginSettingTab, setIcon, Setting } from 'obsidian';
 import { AttributeType } from 'src/utils/attributeType';
 import { css } from 'src/utils/css';
 import { shadowTextPlugin } from 'src/plugin/shadowTextPlugin';
@@ -9,6 +9,7 @@ import { GlobalTagSetting } from 'src/setting/globalTagSetting';
 import { TagDetailUtils } from 'src/tagDetail/tagDetailUtils';
 import { FileTagDetail } from 'src/tagDetail/fileTagDetail';
 import { Convert } from 'src/utils/dataConvert';
+import { BaseTagSetting } from 'src/setting/baseTagSetting';
 
 // Remember to rename these classes and interfaces!
 
@@ -47,6 +48,9 @@ export default class ColorfulTag extends Plugin {
 		})
 		this.app.metadataCache.on("changed", async (file, data, cache) => {
 			await FileTagDetail.handleMetadataChange(file, data, cache, this)
+		})
+		this.settings.TagSettings.forEach((tag, i) => {
+			tag.opened = false
 		})
 		await this.refresh()
 		await TagDetailUtils.hoverTagPopupListener(this)
@@ -203,9 +207,40 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 			newTag.generateDOM(containerEl, this.plugin, this.plugin.settings.TagSettings.length-1)
 		})
 
+		let sup = new BaseTagSetting();
+		let support = containerEl.createDiv("colorful-tag-setting-header is-collapsed");
+		let support_header = support.createDiv();
+		let support_title = sup.generateTitle(support_header, support, false);
+
+		support_title.nameEl.createSpan().setText("Support Colorful Tag!")
+		let supportBody = support.createDiv("colorful-tag-setting-body");
+		supportBody.createSpan().setText("Your support will be my motivation to improve Colorful Tag. If you like this plugin, please consider to buy me a coffee. Thank you!");
+		let link = supportBody.createEl("a");
+		link.setAttrs({href: "https://ko-fi.com/V7V2G2MOF", target: "_blank"});
+		link.createEl("img").setAttrs({
+			height: "32",
+			style: "border:0px;height:32px;display:block;margin:10px auto;",
+			src: "https://storage.ko-fi.com/cdn/kofi2.png?v=3",
+			border: "0",
+			alt: "Buy Me a Coffee at ko-fi.com"
+		});
+
+		let general = containerEl.createDiv("colorful-tag-setting-header is-collapsed");
+		let generalHeader = general.createDiv();
+		let generalTitle = this.plugin.settings.GlobalTagSetting.generateTitle(generalHeader, general, false);
+		generalTitle.nameEl.createSpan().setText("General Setting");
+		let generalBody = general.createDiv("colorful-tag-setting-body");
+		new Setting(generalBody).setName("Enable Tag Detail(Beta)").addToggle((cp) => {
+			cp.setValue(this.plugin.settings.UseTagDetail || false)
+			.onChange((v) => {
+				this.plugin.settings.UseTagDetail = v;
+				this.plugin.saveSettings();
+				this.display();
+			})
+		})
+
 		this.plugin.settings.GlobalTagSetting.generateDOM(containerEl, this.plugin)
 		this.plugin.settings.TagSettings.forEach((tag, i) => {
-			tag.opened = false
 			tag.generateDOM(containerEl, this.plugin, i)
 		})
 		this.plugin.refresh()

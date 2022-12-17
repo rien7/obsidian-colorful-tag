@@ -61,7 +61,7 @@ export class PerTagSetting extends BaseTagSetting {
             editing_selector = `span[class*="cm-tag-${tag2}"]`;
         }
 
-        let style1 = `font-weight: ${font_weight}; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; white-space: nowrap; border: ${border};`
+        let style1 = `font-weight: ${font_weight}; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; white-space: nowrap; border: ${border}; vertical-align: middle;`
         let style2 = `border-radius: ${radius}; padding-left: ${padding_size}; padding-right: ${padding_size};`
         let style3 = `border-top-right-radius: 0; border-bottom-right-radius: 0; padding-right: 0px; border-top-left-radius: ${radius}; border-bottom-left-radius: ${radius}; padding-left: ${padding_size};`
         let style4 = `border-bottom-left-radius: 0; border-top-left-radius: 0; padding-left: 0px; border-top-right-radius: ${radius}; border-bottom-right-radius: ${radius}; padding-right: ${padding_size};`
@@ -132,13 +132,13 @@ export class PerTagSetting extends BaseTagSetting {
     }
 
     drag(title: Setting, setting: HTMLElement, index: number, plugin: ColorfulTag) {
-        let dropHandle = title.controlEl.createEl("span")
-        dropHandle.addClass("colorful-tag-handler")
-        setIcon(dropHandle, "align-justify")
+        let dragHandle = title.controlEl.createEl("span")
+        dragHandle.addClass("colorful-tag-handler")
+        setIcon(dragHandle, "align-justify")
         setting.setAttr("index", index)
 
-        dropHandle.draggable = true
-        dropHandle.ondragover = (e) => {
+        dragHandle.draggable = true
+        dragHandle.ondragover = (e) => {
             let to = e.target as HTMLElement
             to = to.closest(".colorful-tag-setting-outer") as HTMLElement
             if (GlobalTagSetting.from == null) return
@@ -154,11 +154,11 @@ export class PerTagSetting extends BaseTagSetting {
             plugin.settings.TagSettings[parseInt(GlobalTagSetting.from.getAttr("index")!)] = plugin.settings.TagSettings[parseInt(to.getAttr("index")!)]
             plugin.settings.TagSettings[parseInt(to.getAttr("index")!)] = tmpSetting
         }
-        dropHandle.ondragend = () => {
+        dragHandle.ondragend = () => {
             GlobalTagSetting.from = null
             plugin.saveSettings()
         }
-        dropHandle.ondragstart = (e) => {
+        dragHandle.ondragstart = (e) => {
             let from = e.target as HTMLElement
             from = from.closest(".colorful-tag-setting-outer") as HTMLElement
             GlobalTagSetting.from = from
@@ -244,7 +244,9 @@ export class PerTagSetting extends BaseTagSetting {
         }
 
         this.tagDetail.tagIndex = index
-        this.tagDetail.generateDOM(body, plugin)
+        if (plugin.settings.UseTagDetail) {
+            this.tagDetail.generateDOM(body, plugin)
+        }
 
         new Setting(body).addButton((cp) => {
             cp.setIcon("trash")
