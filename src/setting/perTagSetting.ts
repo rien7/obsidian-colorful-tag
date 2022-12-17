@@ -71,7 +71,7 @@ export class PerTagSetting extends BaseTagSetting {
         css += `[class*="popup-${tag2}"] > .colorful-tag-popup-header { display: flex; padding: 5px 10px; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; font-weight: ${font_weight}; border-radius: 10px 10px 0 0; }`;
         css += `[class*="popup-${tag2}"] > .colorful-tag-popup-body { padding: 0 10px; border: 4px solid ${background_color}; border-radius: 0 0 10px 10px; border-top: none;}`;
 
-        css += `body a.tag[${reading_selector}], body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag { ${style1} }`;
+        css += `body a.tag[${reading_selector}], body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag { ${style1}; vertical-align: bottom; }`;
         // only reading view
         css += `body a.tag[${reading_selector}] { ${style2} }`;
         // edit view begin
