@@ -12,18 +12,39 @@ export class FileTagDetail {
     static shadowText: Array<[string, string]> = new Array()
 
     getTagData(i: number): Map<string, string | null> | null {
-        if (this.kvss.length == 0) {
-            return null
+        let len = this.kvss.length;
+        if (i >= len) {
+            for (let j = len; j < i; j++) {
+                this.kvss.push(null)
+            }
+            this.kvss.push(null)
         }
+        console.log("get tag data")
+        console.log(this.kvss)
+        console.log(this.kvss[i])
         return this.kvss[i]
     }
 
     setTagData(i: number, data: Map<string, string | null>) {
+        let len = this.kvss.length;
+        if (i >= len) {
+            for (let j = len; j < i; j++) {
+                this.kvss.push(null)
+            }
+        }
         this.kvss[i] = data
     }
 
     addTagData(i: number) {
-        this.kvss.splice(i, 0, new Map())
+        let len = this.kvss.length;
+        if (i >= len) {
+            for (let j = len; j < i; j++) {
+                this.kvss.push(null)
+            }
+        }
+        this.kvss[i]  = new Map()
+        console.log("add tag data")
+        console.log(this.kvss)
     }
 
     constructor(plugin: ColorfulTag) {
@@ -38,6 +59,16 @@ export class FileTagDetail {
 
     async getFrontmatter() {
         if (this.content == null) await this.readFile()
+        if (this.plugin.settings.StoreTagDetailInYaml == "plugin") {
+            let dataMap = this.plugin.settings.TagDetailData as Map<string, Array<Map<string, string | null>>>
+            let data = dataMap.get(this.file!.path)
+            if (data == undefined) {
+                this.kvss = new Array()
+            } else {
+                this.kvss = data
+            }
+            return;
+        }
         const match = this.content?.match(/^---\s+([\w\W]+?)\s+---/);
         if (match) {
             const frontmatterRaw = match[1];
@@ -48,6 +79,22 @@ export class FileTagDetail {
     }
 
     async writeFrontmatter() {
+        console.log("write frontmatter")
+        if (this.plugin.settings.StoreTagDetailInYaml == "plugin") {
+            let dataMap = this.plugin.settings.TagDetailData as Map<string, Array<Map<string, string | null>>>
+            let arr = new Array<Map<string, string | null>>()
+            this.kvss.forEach((v) => {
+                if (v == null) {
+                    arr.push(new Map())
+                } else {
+                    arr.push(v)
+                }
+            })
+            dataMap.set(this.file!.path, arr)
+            this.plugin.settings.TagDetailData = dataMap
+            this.plugin.saveSettings()
+            return
+        };
         this.map2yaml()
         if (this.content?.match(/^---\s+([\w\W]+?)\s+---/)) {
             this.content = this.content.replace(/^---\s+([\w\W]+?)\s+---/, `---\n${stringifyYaml(this.yaml)}---`)
@@ -135,7 +182,9 @@ export class FileTagDetail {
             // TagDetailUtils.removeListener()
             // await TagDetailUtils.hoverTagPopupListener(plugin)
         }
-        await TagDetailUtils.fileTagDetail.writeFrontmatter()
+        if (tagsMeta.length != tags.length) {
+            await TagDetailUtils.fileTagDetail.writeFrontmatter()
+        }
         metaFileTagDetail.set(file.path, tagsMeta)
         TagDetailUtils.removeListener()
         await TagDetailUtils.hoverTagPopupListener(plugin)
