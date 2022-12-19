@@ -87,6 +87,9 @@ export class perTagDetail {
             if (!storeData!.get(key) && dValue && item[1] != AttributeType.ReadOnly) {
                 storeData!.set(key, dValue)
                 this.fileTagDetail.setTagData(this.index, storeData!)
+                this.updateShadowText()
+                this.fileTagDetail.writeFrontmatter()
+                return
             }
 
             switch(item[1]) {
@@ -155,7 +158,7 @@ export class perTagDetail {
         })
 
         this.updateShadowText()
-        this.fileTagDetail.writeFrontmatter()
+        // this.fileTagDetail.writeFrontmatter()
     }
 
     popupHTML(tagDom: Element, other: Element) {

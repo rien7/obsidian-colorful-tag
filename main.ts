@@ -17,13 +17,17 @@ interface ColorfulTagSettings {
 	TagSettings: PerTagSetting[];
 	GlobalTagSetting: GlobalTagSetting;
 	UseTagDetail: boolean;
+	StoreTagDetailInYaml: string;
 	MetaFileTagDetails: Map<string, string[]> | Object;
+	TagDetailData: Map<string, Array<Map<string, string | null>>> | Object;
 }
 
 export const DEFAULT_SETTINGS: ColorfulTagSettings = {
 	TagSettings: new Array<PerTagSetting>(),
 	GlobalTagSetting: new GlobalTagSetting(),
-	UseTagDetail: true,
+	UseTagDetail: false,
+	StoreTagDetailInYaml: "plugin",
+	TagDetailData: new Map<string, Array<Map<string, string | null>>>(),
 	MetaFileTagDetails: new Map<string, string[]>()
 }
 
@@ -109,6 +113,17 @@ export default class ColorfulTag extends Plugin {
 
 		let ttmpMap = new Map<string, string[]>(Object.entries(this.settings.MetaFileTagDetails));
 		this.settings.MetaFileTagDetails = ttmpMap;
+
+		let tttmpMap = new Map<string, Array<Map<string, string | null>>>(Object.entries(this.settings.TagDetailData));
+		for (let [path, tagDetail] of tttmpMap) {
+			let tmpTagDetail = new Array<Map<string, string | null>>()
+			for (let i = 0; i < tagDetail.length; i++) {
+				let tmp = new Map<string, string | null>(Object.entries(tagDetail[i]))
+				tmpTagDetail.push(tmp)
+			}
+			tttmpMap.set(path, tmpTagDetail)
+		}
+		this.settings.TagDetailData = tttmpMap;
 	}
 
 	saveSettings() {
@@ -173,6 +188,23 @@ export default class ColorfulTag extends Plugin {
 		}
 		this.settings.MetaFileTagDetails = ttmpMapObj;
 
+		let tttmp = this.settings.TagDetailData;
+		let tttmpMapObj = Object.create(null)
+		let tttmpMap = this.settings.TagDetailData as Map<string, Array<Map<string, string | null>>>
+		for (let [path, tagDetailData] of tttmpMap) {
+			let ttttArray = []
+			for (let i = 0; i < tagDetailData.length; i++) {
+				let ttttobj = Object.create(null)
+				let attr = tagDetailData[i] as Map<string, string | null>
+				for (let [k1, v1] of attr) {
+					ttttobj[k1] = v1
+				}
+				ttttArray.push(ttttobj)
+			}
+			tttmpMapObj[path] = ttttArray
+		}
+		this.settings.TagDetailData = tttmpMapObj;
+
 		this.saveData(this.settings);
 		
 		for (let i = 0; i < this.settings.TagSettings.length; i++) {
@@ -183,6 +215,7 @@ export default class ColorfulTag extends Plugin {
 		this.settings.GlobalTagSetting.attributes = globalTmp
 		this.settings.GlobalTagSetting.enableList_ = globalBTmp
 		this.settings.MetaFileTagDetails = ttmp;
+		this.settings.TagDetailData = tttmp;
 	}
 }
 
@@ -236,6 +269,15 @@ class ColorfulTagSettingTab extends PluginSettingTab {
 				this.plugin.settings.UseTagDetail = v;
 				this.plugin.saveSettings();
 				this.display();
+			})
+		})
+		new Setting(generalBody).setName("Store Tag Detail in").addDropdown((cp) => {
+			cp.addOption("yaml", "Frontmatter")
+			cp.addOption("plugin", "Plugin")
+			cp.setValue(this.plugin.settings.StoreTagDetailInYaml)
+			.onChange((v) => {
+				this.plugin.settings.StoreTagDetailInYaml = v;
+				this.plugin.saveSettings();
 			})
 		})
 
