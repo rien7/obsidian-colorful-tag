@@ -61,7 +61,7 @@ export class PerTagSetting extends BaseTagSetting {
             editing_selector = `span[class*="cm-tag-${tag2}"]`;
         }
 
-        let style1 = `font-weight: ${font_weight}; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; white-space: nowrap; border: ${border}; vertical-align: middle;`
+        let style1 = `font-weight: ${font_weight}; background-color: ${background_color}; color: ${text_color}; font-size: ${text_size}; white-space: nowrap; border: ${border}; vertical-align: baseline;`
         let style2 = `border-radius: ${radius}; padding-left: ${padding_size}; padding-right: ${padding_size};`
         let style3 = `border-top-right-radius: 0; border-bottom-right-radius: 0; padding-right: 0px; border-top-left-radius: ${radius}; border-bottom-left-radius: ${radius}; padding-left: ${padding_size};`
         let style4 = `border-bottom-left-radius: 0; border-top-left-radius: 0; padding-left: 0px; border-top-right-radius: ${radius}; border-bottom-right-radius: ${radius}; padding-right: ${padding_size};`
@@ -80,8 +80,8 @@ export class PerTagSetting extends BaseTagSetting {
         css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end { ${style4} }`;
 
         if (remove_hash.toLowerCase() == "true" && remove_tag_name.toLowerCase() == "true") {
-            css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin { font-size: 0px; }`;
-            css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end { font-size: 0px; }`;
+            css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin { font-size: 0px; background-color: revert; }`;
+            css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end { font-size: 0px; background-color: revert; }`;
             if (suffix == "" && prefix != "") {
                 css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin::before { padding-right: var(--tag-padding-x) !important; border-top-right-radius: ${radius} !important; border-bottom-right-radius: ${radius} !important; }`
             } else if (prefix == "" && suffix != "") {
@@ -91,11 +91,15 @@ export class PerTagSetting extends BaseTagSetting {
             css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin { font-size: 0px; }`;
             if (prefix == "") {
                 css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end { padding-left: var(--tag-padding-x); border-top-left-radius: ${radius} !important; border-bottom-left-radius: ${radius} !important; }`;
+            } else {
+                css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin { padding-left: 0; }`
             }
         } else if (remove_tag_name.toLowerCase() == "true") {
             css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end { font-size: 0px; }`;
             if (suffix == "") {
                 css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-begin { padding-right: var(--tag-padding-x); border-top-right-radius: ${radius} !important; border-bottom-right-radius: ${radius} !important; }`;
+            } else {
+                css += `body .cm-s-obsidian .cm-line ${editing_selector}.cm-hashtag.cm-hashtag-end { padding-right: 0; }`
             }
         }
 
